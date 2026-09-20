@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manager - Burundi People Registry</title>
+    <link rel="stylesheet" href="manager.css">
+</head>
+
+<body>
+
+<header class="header">
+    <div class="logo">
+        <h1>BURUNDI PEOPLE REGISTRY</h1>
+        <span>ESPACE MANAGER</span>
+    </div>
+
+    <nav class="nav">
+        <a href="accueil.html">Accueil</a>
+        <a href="register.html">Enregistrer</a>
+        <a href="menage.html">Ménages</a>
+        <a href="personne.html">Personnes</a>
+        <a href="manager.html" class="active">Manager</a>
+        <button id="btnDeconnexion">Déconnexion</button>
+    </nav>
+</header>
+
+
+<main class="container">
+
+    <section class="page-title">
+        <h2>Tableau de bord Manager</h2>
+        <p id="dateActuelle"></p>
+    </section>
+
+
+    <!-- =========================
+         STATISTIQUES
+    ========================== -->
+    <section class="stats-grid">
+
+        <div class="stat-card">
+            <div class="stat-icon">👨‍👩‍👧‍👦</div>
+            <div>
+                <h3 id="totalMenages">0</h3>
+                <p>Total ménages</p>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon">👤</div>
+            <div>
+                <h3 id="totalPersonnes">0</h3>
+                <p>Total personnes</p>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon">👥</div>
+            <div>
+                <h3 id="totalUtilisateurs">0</h3>
+                <p>Comptes utilisateurs</p>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon">📍</div>
+            <div>
+                <h3 id="totalProvinces">0</h3>
+                <p>Provinces</p>
+            </div>
+        </div>
+
+    </section>
+
+
+    <!-- =========================
+         ACTIONS RAPIDES
+    ========================== -->
+    <section class="card">
+
+        <div class="section-header">
+            <h2>Actions rapides</h2>
+        </div>
+
+        <div class="quick-actions">
+
+            <button id="btnActualiser" class="btn primary">
+                🔄 Actualiser
+            </button>
+
+            <button id="btnSynchroniser" class="btn success">
+                🔄 Synchroniser
+            </button>
+
+            <a href="menage.html" class="btn info">
+                👨‍👩‍👧‍👦 Liste des ménages
+            </a>
+
+            <a href="personne.html" class="btn warning">
+                👤 Liste des personnes
+            </a>
+            <a href="compte.html" class="compte">CREER OU MODIFIER UN COMPTE UTILISATEUR</a>
+
+        </div>
+
+        <p id="messageSynchronisation" class="message"></p>
+
+    </section>
+
+
+    <!-- =========================
+         FILTRES MANAGER
+    ========================== -->
+    <section class="card">
+
+        <div class="section-header">
+            <h2>Filtres Manager</h2>
+        </div>
+
+        <div class="filters-grid">
+
+            <div class="form-group">
+                <label for="filtreUtilisateur">Utilisateur</label>
+                <select id="filtreUtilisateur">
+                    <option value="">Tous les utilisateurs</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="filtreProvince">Province</label>
+                <select id="filtreProvince">
+                    <option value="">Toutes les provinces</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="filtreCommune">Commune</label>
+                <select id="filtreCommune">
+                    <option value="">Toutes les communes</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="filtreZone">Zone</label>
+                <select id="filtreZone">
+                    <option value="">Toutes les zones</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="filtreColline">Colline</label>
+                <select id="filtreColline">
+                    <option value="">Toutes les collines</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="filtreSousColline">Sous-colline</label>
+                <select id="filtreSousColline">
+                    <option value="">Toutes les sous-collines</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="filtreChef10">Chef de 10 maisons</label>
+                <select id="filtreChef10">
+                    <option value="">Tous les chefs</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="rechercheManager">Recherche</label>
+                <input
+                    type="text"
+                    id="rechercheManager"
+                    placeholder="Rechercher..."
+                >
+            </div>
+
+        </div>
+
+        <div class="filter-buttons">
+
+            <button id="btnAppliquerFiltres" class="btn primary">
+                🔎 Appliquer
+            </button>
+
+            <button id="btnResetFiltres" class="btn secondary">
+                ✖ Réinitialiser
+            </button>
+
+        </div>
+
+    </section>
+
+
+    <!-- =========================
+         COMPTES UTILISATEURS
+    ========================== -->
+    <section class="card">
+
+        <div class="section-header">
+            <h2>Comptes utilisateurs</h2>
+            <span class="count" id="countUtilisateurs">0</span>
+        </div>
+
+        <div class="table-container">
+
+            <table>
+
+                <thead>
+                    <tr>
+                        <th>Nom et prénom</th>
+                        <th>Identifiant</th>
+                        <th>Province</th>
+                        <th>Ménages</th>
+                        <th>Personnes</th>
+                        <th>Statut</th>
+                        <th>Date</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+
+                <tbody id="tableUtilisateurs">
+                    <tr>
+                        <td colspan="8" class="empty">
+                            Aucun utilisateur enregistré
+                        </td>
+                    </tr>
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </section>
+
+
+    <!-- =========================
+         RAPPORT PAR UTILISATEUR
+    ========================== -->
+    <section class="card">
+
+        <div class="section-header">
+            <h2>Rapport par utilisateur</h2>
+        </div>
+
+        <div class="table-container">
+
+            <table>
+
+                <thead>
+                    <tr>
+                        <th>Utilisateur</th>
+                        <th>Province</th>
+                        <th>Ménages</th>
+                        <th>Personnes</th>
+                    </tr>
+                </thead>
+
+                <tbody id="tableRapportUtilisateurs">
+                    <tr>
+                        <td colspan="4" class="empty">
+                            Aucun rapport disponible
+                        </td>
+                    </tr>
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </section>
+
+
+    <!-- =========================
+         SYNCHRONISATION
+    ========================== -->
+    <section class="card">
+
+        <div class="section-header">
+            <h2>Synchronisation des données</h2>
+        </div>
+
+        <div class="sync-box">
+
+            <div>
+                <strong>État :</strong>
+                <span id="syncStatus">En attente</span>
+            </div>
+
+            <button id="btnLancerSynchronisation" class="btn success">
+                🔄 Lancer la synchronisation
+            </button>
+
+        </div>
+
+    </section>
+
+
+    <!-- =========================
+         RAPPORT GLOBAL
+    ========================== -->
+    <section class="card">
+
+        <div class="section-header">
+            <h2>Rapport global</h2>
+        </div>
+
+        <div class="rapport-grid">
+
+            <div class="rapport-item">
+                <span>Total ménages</span>
+                <strong id="rapportTotalMenages">0</strong>
+            </div>
+
+            <div class="rapport-item">
+                <span>Total personnes</span>
+                <strong id="rapportTotalPersonnes">0</strong>
+            </div>
+
+            <div class="rapport-item">
+                <span>Total utilisateurs</span>
+                <strong id="rapportTotalUtilisateurs">0</strong>
+            </div>
+
+            <div class="rapport-item">
+                <span>Moyenne personnes/ménage</span>
+                <strong id="rapportMoyenne">0</strong>
+            </div>
+
+        </div>
+
+    </section>
+
+</main>
+
+
+<footer class="footer">
+    <p>
+        BURUNDI PEOPLE REGISTRY © 2026 -
+        Espace Manager
+    </p>
+</footer>
+
+
+<script src="manager.js"></script>
+
+</body>
+</html>

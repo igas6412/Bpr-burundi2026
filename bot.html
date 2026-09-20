@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>BPR Assistant - Burundi People Registry</title>
+
+    <link rel="stylesheet" href="bot.css">
+</head>
+
+<body>
+
+    <!-- ==================================================
+         🇧🇮 BURUNDI PEOPLE REGISTRY
+         🤖 BPR AI ASSISTANT
+    =================================================== -->
+
+    <div class="bpr-page">
+
+        <header class="bpr-header">
+            <div class="logo">
+                🇧🇮
+            </div>
+
+            <div>
+                <h1>BURUNDI PEOPLE REGISTRY</h1>
+                <p>Assistant intelligent BPR</p>
+            </div>
+        </header>
+
+
+        <!-- ==================================================
+             🤖 BPR BOT
+        =================================================== -->
+
+        <main class="bot-page">
+
+            <div class="welcome-card">
+
+                <div class="welcome-icon">
+                    🤖
+                </div>
+
+                <h2>Bienvenue sur BPR Assistant</h2>
+
+                <p>
+                    Muraho neza! 👋🇧🇮
+                </p>
+
+                <p>
+                    Ndi umufasha wa
+                    <strong>Burundi People Registry</strong>.
+                    Noshobora kugufasha kurondera amakuru
+                    no gukoresha system ya BPR.
+                </p>
+
+            </div>
+
+
+            <!-- CHAT CONTAINER -->
+
+            <div id="bprBot">
+
+                <!-- BOT BUTTON -->
+
+                <button
+                    id="botButton"
+                    type="button"
+                    aria-label="Ouvrir BPR Assistant"
+                    title="BPR Assistant">
+
+                    🤖
+
+                </button>
+
+
+                <!-- BOT WINDOW -->
+
+                <section
+                    id="botWindow"
+                    aria-label="BPR Assistant">
+
+                    <!-- HEADER -->
+
+                    <div class="bot-header">
+
+                        <div class="bot-profile">
+
+                            <div class="bot-avatar">
+                                🤖
+                            </div>
+
+                            <div class="bot-info">
+
+                                <strong>
+                                    BPR Assistant
+                                </strong>
+
+                                <small>
+                                    🇧🇮 Burundi People Registry
+                                </small>
+
+                            </div>
+
+                        </div>
+
+
+                        <button
+                            id="closeBot"
+                            type="button"
+                            aria-label="Fermer">
+
+                            ×
+
+                        </button>
+
+                    </div>
+
+
+                    <!-- STATUS -->
+
+                    <div class="bot-status">
+
+                        <span class="status-dot"></span>
+
+                        <span>
+                            Assistant disponible
+                        </span>
+
+                    </div>
+
+
+                    <!-- MESSAGES -->
+
+                    <div
+                        id="botMessages"
+                        class="bot-messages">
+
+                        <!-- MESSAGE BOT -->
+
+                        <div class="bot-message">
+
+                            <div class="message-avatar">
+                                🤖
+                            </div>
+
+                            <div class="message-content">
+
+                                <strong>
+                                    BPR Assistant
+                                </strong>
+
+                                <p>
+                                    Muraho neza! 👋
+                                </p>
+
+                                <p>
+                                    Ndi BPR Assistant.
+                                    Nobafasha gukoresha
+                                    <strong>
+                                        Burundi People Registry
+                                    </strong>.
+                                </p>
+
+                                <p>
+                                    Ushobora kumbaza:
+                                </p>
+
+                                <ul>
+
+                                    <li>
+                                        🏠 Ménages zingahe zanditswe?
+                                    </li>
+
+                                    <li>
+                                        👥 Abantu bangana iki?
+                                    </li>
+
+                                    <li>
+                                        👤 Hari visiteurs bangahe?
+                                    </li>
+
+                                    <li>
+                                        🔎 Norondera gute umuntu?
+                                    </li>
+
+                                    <li>
+                                        📝 Nandikisha gute ménage?
+                                    </li>
+
+                                    <li>
+                                        📊 Mpa statistiques
+                                    </li>
+
+                                </ul>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- QUESTIONS RAPIDES -->
+
+                    <div class="bot-quick-actions">
+
+                        <button
+                            type="button"
+                            class="quick-question"
+                            data-question="Ménages zingahe zanditswe?">
+
+                            🏠 Ménages
+
+                        </button>
+
+
+                        <button
+                            type="button"
+                            class="quick-question"
+                            data-question="Abantu bangana iki?">
+
+                            👥 Personnes
+
+                        </button>
+
+
+                        <button
+                            type="button"
+                            class="quick-question"
+                            data-question="Hari visiteurs bangahe?">
+
+                            👤 Visiteurs
+
+                        </button>
+
+
+                        <button
+                            type="button"
+                            class="quick-question"
+                            data-question="Mpa statistiques">
+
+                            📊 Statistiques
+
+                        </button>
+
+
+                        <button
+                            type="button"
+                            class="quick-question"
+                            data-question="Nshaka ubufasha">
+
+                            ❓ Aide
+
+                        </button>
+
+                    </div>
+
+
+                    <!-- INPUT -->
+
+                    <div class="bot-input">
+
+                        <input
+                            type="text"
+                            id="botInput"
+                            placeholder="Andika ikibazo..."
+                            autocomplete="off"
+                            aria-label="Andika ubutumwa">
+
+
+                        <button
+                            id="sendBot"
+                            type="button"
+                            aria-label="Ohereza">
+
+                            ➤
+
+                        </button>
+
+                    </div>
+
+
+                    <!-- FOOTER -->
+
+                    <div class="bot-footer">
+
+                        🤖 BPR Assistant
+
+                        <span>•</span>
+
+                        🇧🇮 Burundi People Registry
+
+                    </div>
+
+                </section>
+
+            </div>
+
+        </main>
+
+
+        <!-- ==================================================
+             FOOTER
+        =================================================== -->
+
+        <footer class="bpr-footer">
+
+            <p>
+                <strong>
+                    © 2026 🇧🇮 Burundi People Registry
+                </strong>
+            </p>
+
+            <p>
+                BPR Assistant
+            </p>
+
+        </footer>
+
+    </div>
+
+
+    <!-- ==================================================
+         JAVASCRIPT
+    =================================================== -->
+
+    <script src="bot.js"></script>
+
+</body>
+</html>

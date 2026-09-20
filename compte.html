@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>BURUNDI PEOPLE REGISTRY - Comptes</title>
+
+    <link rel="stylesheet" href="compte.css">
+</head>
+
+<body>
+
+<section class="compte-section">
+
+    <div class="section-header">
+        <h2>👤 Créer un compte</h2>
+        <span class="manager-only">🔐 Manager uniquement</span>
+    </div>
+
+    <form id="formCreerUtilisateur">
+
+        <div class="form-grid">
+
+            <!-- NOM -->
+            <div class="form-group">
+                <label for="nomUtilisateur">
+                    Nom et prénom
+                </label>
+
+                <input
+                    type="text"
+                    id="nomUtilisateur"
+                    placeholder="Nom et prénom"
+                    required
+                >
+            </div>
+
+            <!-- IDENTIFIANT -->
+            <div class="form-group">
+                <label for="identifiantUtilisateur">
+                    Nom d'utilisateur
+                </label>
+
+                <input
+                    type="text"
+                    id="identifiantUtilisateur"
+                    placeholder="Exemple : jean123"
+                    required
+                >
+            </div>
+
+            <!-- MOT DE PASSE -->
+            <div class="form-group">
+                <label for="motDePasseUtilisateur">
+                    Mot de passe
+                </label>
+
+                <input
+                    type="password"
+                    id="motDePasseUtilisateur"
+                    placeholder="Mot de passe"
+                    required
+                >
+            </div>
+
+            <!-- CONFIRMATION -->
+            <div class="form-group">
+                <label for="confirmationMotDePasse">
+                    Confirmer le mot de passe
+                </label>
+
+                <input
+                    type="password"
+                    id="confirmationMotDePasse"
+                    placeholder="Confirmer le mot de passe"
+                    required
+                >
+            </div>
+
+
+            <!-- =================================================
+                 TYPE DE COMPTE
+            ================================================== -->
+
+            <div class="form-group">
+                <label for="roleUtilisateur">
+                    Type de compte
+                </label>
+
+                <select id="roleUtilisateur" required>
+
+                    <option value="Utilisateur">
+                        Utilisateur
+                    </option>
+
+                    <option value="Manager Zonal">
+                        Manager Zonal
+                    </option>
+
+                    <option value="Manager Communal">
+                        Manager Communal
+                    </option>
+
+                    <option value="Manager Provincial">
+                        Manager Provincial
+                    </option>
+
+                    <option value="Manager National">
+                        Manager National
+                    </option>
+
+                </select>
+            </div>
+
+
+            <!-- =================================================
+                 PROVINCE
+            ================================================== -->
+
+            <div class="form-group">
+                 <label for="PAYS">PAYS</label>
+                 <select name="" id="">
+                 <option value="BURUNDI">BURUNDI</option>
+</select>
+                <label for="provinceUtilisateur">
+                    Province
+                </label>
+
+                <select id="provinceUtilisateur" required>
+
+                    <option value="">
+                        Sélectionner une province
+                    </option>
+
+                    <option value="Buhumuza">
+                        Buhumuza
+                    </option>
+
+                    <option value="Bujumbura">
+                        Bujumbura
+                    </option>
+
+                    <option value="Burunga">
+                        Burunga
+                    </option>
+
+                    <option value="Butanyerera">
+                        Butanyerera
+                    </option>
+
+                    <option value="Gitega">
+                        Gitega
+                    </option>
+
+                </select>
+            </div>
+
+
+            <!-- =================================================
+                 COMMUNE
+            ================================================== -->
+
+            <div class="form-group">
+
+                <label for="communeUtilisateur">
+                    Commune
+                </label>
+
+                <select
+                    id="communeUtilisateur"
+                    disabled
+                >
+
+                    <option value="">
+                        Sélectionner une commune
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <!-- =================================================
+                 ZONE
+            ================================================== -->
+
+            <div class="form-group">
+
+                <label for="zoneUtilisateur">
+                    Zone
+                </label>
+
+                <select
+                    id="zoneUtilisateur"
+                    disabled
+                >
+
+                    <option value="">
+                        Sélectionner une zone
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <!-- =================================================
+                 COLLINE
+            ================================================== -->
+
+            <div class="form-group">
+
+                <label for="collineUtilisateur">
+                    Colline
+                </label>
+
+                <select
+                    id="collineUtilisateur"
+                    disabled
+                >
+
+                    <option value="">
+                        Sélectionner une colline
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <!-- =================================================
+                 STATUT
+            ================================================== -->
+
+            <div class="form-group">
+
+                <label for="statutUtilisateur">
+                    Statut
+                </label>
+
+                <select
+                    id="statutUtilisateur"
+                    required
+                >
+
+                    <option value="Actif">
+                        Actif
+                    </option>
+
+                    <option value="Inactif">
+                        Inactif
+                    </option>
+
+                </select>
+
+            </div>
+
+        </div>
+
+
+        <!-- ACTIONS -->
+
+        <div class="form-actions">
+
+            <button
+                type="submit"
+                id="btnCreerUtilisateur"
+                class="btn primary"
+            >
+                ➕ Créer le compte
+            </button>
+
+            <button
+                type="button"
+                id="btnAnnulerModification"
+                class="btn"
+                style="display:none;"
+            >
+                Annuler
+            </button>
+
+        </div>
+
+
+        <!-- MESSAGE -->
+
+        <div
+            id="messageUtilisateur"
+            class="message"
+        ></div>
+
+    </form>
+
+</section>
+
+
+<!-- =====================================================
+     LISTE DES COMPTES
+===================================================== -->
+
+<section class="compte-section">
+
+    <div class="section-header">
+
+        <h2>
+            👥 Comptes utilisateurs et managers
+        </h2>
+
+        <span
+            id="countUtilisateurs"
+            class="count-badge"
+        >
+            0
+        </span>
+
+    </div>
+
+
+    <div class="table-container">
+
+        <table>
+
+            <thead>
+
+                <tr>
+
+                    <th>
+                        Nom et prénom
+                    </th>
+
+                    <th>
+                        Identifiant
+                    </th>
+
+                    <th>
+                        Type de compte
+                    </th>
+
+                    <th>
+                        Province
+                    </th>
+
+                    <th>
+                        Commune
+                    </th>
+
+                    <th>
+                        Zone
+                    </th>
+
+                    <th>
+                        Colline
+                    </th>
+
+                    <th>
+                        Statut
+                    </th>
+
+                    <th>
+                        Date de création
+                    </th>
+
+                    <th>
+                        Actions
+                    </th>
+
+                </tr>
+
+            </thead>
+
+
+            <tbody id="tableUtilisateurs">
+
+                <tr>
+
+                    <td colspan="10">
+                        Aucun compte enregistré.
+                    </td>
+
+                </tr>
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</section>
+
+
+<script src="compte.js"></script>
+
+</body>
+
+</html>

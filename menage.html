@@ -1,0 +1,196 @@
+
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Liste des ménages - Burundi People Registry</title>
+
+    <link rel="stylesheet" href="menage.css">
+
+    <!-- Bibliothèque PDF -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+</head>
+
+<body>
+
+<header class="header">
+    <div class="logo">
+        <h1>BURUNDI PEOPLE REGISTRY</h1>
+        <p>Gestion des ménages enregistrés</p>
+    </div>
+
+    <nav>
+        <a href="manager.html">🏠 Manager</a>
+        <a href="menage.html" class="active">🏠 Ménages</a>
+        <a href="personne.html"> 👭Personnes</a>
+        <a href="register.html">➕ Enregistrer</a>
+        <button id="btnDeconnexion">🚪 Déconnexion</button>
+    </nav>
+</header>
+
+<main class="container">
+
+    <section class="page-title">
+        <h2>🏠 Liste des ménages enregistrés</h2>
+        <p>Rechercher, filtrer et télécharger les ménages.</p>
+    </section>
+
+    <!-- FILTRES -->
+    <section class="card">
+
+        <h3>🔎 Recherche et filtres</h3>
+
+        <div class="filters">
+
+            <div class="filter-group">
+                <label for="filtrePays">Pays</label>
+                <select id="filtrePays">
+                    <option value="">Tous les pays</option>
+                    <option value="Burundi">Burundi</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label for="filtreProvince">Province</label>
+                <select id="filtreProvince">
+                    <option value="">Toutes les provinces</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label for="filtreCommune">Commune</label>
+                <select id="filtreCommune">
+                    <option value="">Toutes les communes</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label for="filtreZone">Zone</label>
+                <select id="filtreZone">
+                    <option value="">Toutes les zones</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label for="filtreColline">Colline</label>
+                <select id="filtreColline">
+                    <option value="">Toutes les collines</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label for="filtreSousColline">Sous-colline</label>
+                <select id="filtreSousColline">
+                    <option value="">Toutes les sous-collines</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label for="filtreChef10">Chef de 10 maisons</label>
+                <select id="filtreChef10">
+                    <option value="">Tous les chefs de 10 maisons</option>
+                </select>
+            </div>
+
+        </div>
+
+        <div class="search-box">
+
+            <input
+                type="search"
+                id="rechercheMenages"
+                placeholder="Rechercher un chef de ménage, province, commune..."
+            >
+
+            <button id="btnRecherche">
+                🔎 Rechercher
+            </button>
+
+            <button id="btnReset">
+                🔄 Réinitialiser
+            </button>
+
+        </div>
+
+    </section>
+
+    <!-- ACTIONS -->
+    <section class="actions-card">
+
+        <div>
+            <strong>Total ménages :</strong>
+            <span id="countMenages">0</span>
+        </div>
+
+        <div class="buttons">
+
+            <button id="btnActualiser" class="btn secondary">
+                🔄 Actualiser
+            </button>
+
+            <button id="btnExportCSV" class="btn success">
+                📊 Télécharger CSV
+            </button>
+
+            <button id="btnExportPDF" class="btn danger">
+                📄 Télécharger PDF
+            </button>
+
+        </div>
+
+    </section>
+
+    <!-- TABLE -->
+    <section class="card table-card">
+
+        <div class="table-container">
+
+            <table>
+
+                <thead>
+                    <tr>
+                        <th>
+                            N⁰
+                        </th>
+                        <th>Chef de ménage</th>
+                        <th>Pays</th>
+                        <th>Province</th>
+                        <th>Commune</th>
+                        <th>Zone</th>
+                        <th>Colline</th>
+                        <th>Sous-colline</th>
+                        <th>Chef de 10 maisons</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+
+                <tbody id="tableMenages">
+                    <tr>
+                        <td colspan="9" class="empty">
+                            Aucun ménage enregistré.
+                        </td>
+                    </tr>
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </section>
+
+</main>
+
+<div id="message" class="message"></div>
+
+<script src="menage.js"></script>
+
+</body>
+</html>
+
+
+
+
+

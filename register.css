@@ -1,0 +1,242 @@
+/* ========================================
+   BURUNDI PEOPLE REGISTRY
+   REGISTER.CSS
+======================================== */
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: Arial, Helvetica, sans-serif;
+  background: #f4f7fb;
+  color: #1f2937;
+  line-height: 1.6;
+}
+
+
+/* ========================================
+   HEADER
+======================================== */
+
+header {
+  background: linear-gradient(135deg, #0b3d91, #1565c0);
+  color: white;
+  text-align: center;
+  padding: 25px 15px;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
+}
+
+header h1 {
+  font-size: 28px;
+  margin-bottom: 5px;
+  font-weight: 800;
+}
+
+header p {
+  font-size: 15px;
+  opacity: 0.95;
+}
+
+
+/* ========================================
+   NAVIGATION
+======================================== */
+
+nav {
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 14px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+nav a,
+nav button {
+  text-decoration: none;
+  border: none;
+  background: transparent;
+  color: #0b3d91;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 10px 15px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: 0.25s;
+}
+
+nav a:hover,
+nav button:hover {
+  background: #e8f0ff;
+}
+
+#btnDeconnexion {
+  background: #dc2626;
+  color: white;
+}
+
+#btnDeconnexion:hover {
+  background: #b91c1c;
+}
+
+
+/* ========================================
+   MAIN
+======================================== */
+
+main {
+  width: 95%;
+  max-width: 1200px;
+  margin: 30px auto;
+}
+
+
+/* ========================================
+   FORM SECTION
+======================================== */
+
+.form-section {
+  background: white;
+  border-radius: 14px;
+  padding: 25px;
+  margin-bottom: 25px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+  border-left: 5px solid #0b3d91;
+}
+
+.form-section h2 {
+  color: #0b3d91;
+  font-size: 21px;
+  margin-bottom: 20px;
+}
+
+.form-section p {
+  color: #6b7280;
+  margin-bottom: 15px;
+}
+
+
+/* ========================================
+   FORM GRID
+======================================== */
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 18px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group label {
+  font-weight: 700;
+  margin-bottom: 7px;
+  color: #374151;
+  font-size: 14px;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  padding: 12px 13px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: white;
+  font-size: 15px;
+  outline: none;
+  transition: 0.25s;
+  font-family: inherit;
+}
+
+.form-group textarea {
+  resize: vertical;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  border-color: #1565c0;
+  box-shadow: 0 0 0 3px rgba(21, 101, 192, 0.12);
+}
+
+.form-group input[readonly] {
+  background: #f1f5f9;
+  color: #475569;
+  font-weight: 700;
+}
+
+
+/* ========================================
+   SECTION TITLE
+======================================== */
+
+.section-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.section-title h2 {
+  margin-bottom: 3px;
+}
+
+.section-title p {
+  margin-bottom: 0;
+}
+
+
+/* ========================================
+   BOUTON AJOUTER
+======================================== */
+
+.btn-add {
+  border: none;
+  background: #16a34a;
+  color: white;
+  padding: 11px 17px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: 0.
+}
+.buttons{
+  background: silver;
+  border-radius: 7px;
+  padding: 15px;
+  .bt1{
+    background:lightblue;
+    border-radius: 12px;
+    left:-10px;
+    padding: 12px;
+    position: relative;
+  }
+  .bt2{
+    background:lightblue;
+    border-radius: 12px;
+    left:27px;
+    padding:12px ;
+    position:relative;
+  }
+}
+/*=======FOOTER======*/
+footer{
+  background: lightblue;
+  padding: 25px;
+  
+}

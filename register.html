@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Inscription - Burundi People Registry</title>
+
+    <link
+        rel="stylesheet"
+        href="register.css"
+    >
+
+</head>
+
+
+<body>
+
+<header>
+
+    <h1>🇧🇮BURUNDI PEOPLE REGISTRY</h1>
+
+    <p>Enregistrement d'un ménage</p>
+
+</header>
+
+
+<nav>
+
+    <a href="accueil.html">
+        Accueil
+    </a>
+
+    <a href="menageutilisateur.html">
+        ménages enregistrées
+    </a>
+
+    <a href="personneutilisateur.html">personnes enregistrées</a>
+
+    <a
+        href="manager.html"
+        class="manager-only"
+    >
+        Manager
+    </a>
+
+    <button id="btnDeconnexion">
+        Déconnexion
+    </button>
+
+</nav>
+
+
+<main>
+
+<form id="personForm">
+
+<input
+    type="hidden"
+    id="menageId"
+>
+
+
+<!-- =====================================
+     INFORMATIONS DU MÉNAGE
+===================================== -->
+
+<section class="form-section">
+
+    <h2>🏠 Informations du ménage</h2>
+
+    <div class="form-grid">
+
+        <div class="form-group">
+
+            <label>Pays</label>
+
+            <input
+                type="text"
+                id="pays"
+                value="Burundi"
+                readonly
+            >
+
+        </div>
+
+
+        <div class="form-group">
+
+            <label>Province</label>
+
+            <select
+                id="province"
+                required
+            >
+
+                <option value="">
+                    Choisir une province
+                </option>
+
+                <option value="Buhumuza">
+                    Buhumuza
+                </option>
+
+                <option value="Bujumbura">
+                    Bujumbura
+                </option>
+
+                <option value="Burunga">
+                    Burunga
+                </option>
+
+                <option value="Butanyerera">
+                    Butanyerera
+                </option>
+
+                <option value="Gitega">
+                    Gitega
+                </option>
+
+            </select>
+
+        </div>
+
+
+        <div class="form-group">
+
+            <label>Commune </label>
+
+            <select
+                id="commune"
+                required
+            >
+
+                <option value="">
+                    Choisir une commune
+                </option>
+
+            </select>
+
+        </div>
+
+
+<div class="form-group">
+    <label for="zone">Zone</label>
+
+    <select id="zone" required>
+        <option value="">Choisir une zone</option>
+    </select>
+</div>
+
+
+<div class="form-group">
+    <label for="colline">Colline / Quartier</label>
+
+    <select id="colline" required>
+        <option value="">Choisir une colline / quartier</option>
+    </select>
+</div>
+
+        <div class="form-group">
+
+            <label>Sous-colline</label>
+
+            <input
+                type="text"
+                id="sousColline"
+                placeholder="Nom de la sous-colline"
+            >
+
+        </div>
+
+
+        <div class="form-group">
+
+            <label>
+                Nom du chef de 10 maisons
+            </label>
+
+            <input
+                type="text"
+                id="chef10Maisons"
+                placeholder="Nom et prénom"
+            >
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- =====================================
+     PÈRE
+===================================== -->
+
+<section class="form-section">
+
+    <h2>👨 Père dans le ménage</h2>
+
+    <div class="form-grid">
+
+        <div class="form-group">
+
+            <label>Nom et prénom du père</label>
+
+            <input
+                type="text"
+                id="nomPere"
+                required
+            >
+
+        </div>
+
+
+        <div class="form-group">
+
+            <label>Genre</label>
+
+            <select id="genrePere">
+
+                <option value="Masculin">
+                    Masculin
+                </option>
+
+            </select>
+
+        </div>
+
+
+        <div class="form-group">
+
+            <label>Âge</label>
+
+            <input
+                type="number"
+                id="agePere"
+                min="0"
+                max="150"
+                placeholder="Exemple:30"
+            >
+
+        </div>
+
+
+        <div class="form-group">
+
+            <label>Numéro d'identité</label>
+
+            <input
+                type="tel"
+                id="identitePere"
+            >
+
+        </div>
+
+
+        <div class="form-group">
+
+            <label>Téléphone</label>
+
+            <input
+                type="tel"
+                id="telephonePere"
+                placeholder="+257..."
+            >
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- =====================================
+     MÈRE
+===================================== -->
+
+<section class="form-section">
+
+    <h2>👩 Mère dans le ménage</h2>
+
+    <div class="form-grid">
+
+        <div class="form-group">
+
+            <label>Nom et prénom de la mère </label>
+
+            <input
+                type="text"
+                id="nomMere"
+                required
+                placeholder="Non et prénom"
+            >
+
+        </div>
+
+
+        <div class="form-group">
+
+            <label>Genre</label>
+
+            <select id="genreMere">
+
+                <option value="Féminin">
+                    Féminin
+                </option>
+
+            </select>
+
+        </div>
+
+
+        <div class="form-group">
+
+            <label>Âge</label>
+
+            <input
+                type="number"
+                id="ageMere"
+                min="0"
+                max="150"
+                placeholder=" Ex: 30"
+            >
+
+        </div>
+
+
+       <div class="form-group">
+
+            <label>Numéro d'identité</label>
+
+            <input
+input type="text" id="identite" name="identite" inputmode="tel"
+                type="tel"
+                id="identiteMere"
+           placeholder="CNI"
+            >
+
+        </div>
+
+
+        <div class="form-group">
+
+            <label>Téléphone</label>
+
+            <input
+                type="tel"
+                id="telephoneMere"
+                placeholder="+257..."
+            >
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- =====================================
+     ENFANTS
+===================================== -->
+
+<section class="form-section">
+
+    <div class="section-title">
+
+        <div>
+
+            <h2>
+                👧👦 Liste des enfants du ménage
+            </h2>
+
+            <p>
+                Ajoutez tous les enfants vivant
+                dans le ménage.
+            </p>
+
+        </div>
+
+
+        <button
+            type="button"
+            id="btnAjouterEnfant"
+            class="btn-add"
+        >
+            ➕ Ajouter un enfant
+        </button>
+
+    </div>
+
+
+    <div id="listeEnfants"></div>
+
+</section>
+
+
+<!-- =====================================
+     PARENTÉ
+===================================== -->
+
+<section class="form-section">
+
+    <div class="section-title">
+
+        <div>
+
+            <h2>
+                👨‍👩‍👧 Autres parentés vivant dans le ménage
+            </h2>
+
+            <p>
+                Ajoutez les autres membres de la
+                parenté vivant dans le ménage.
+            </p>
+
+        </div>
+
+
+        <button
+            type="button"
+            id="btnAjouterParente"
+            class="btn-add"
+        >
+            ➕ Ajouter une parenté
+        </button>
+
+    </div>
+
+
+    <div id="listeParentes"></div>
+
+</section>
+
+
+<!-- =====================================
+     VISITEURS
+===================================== -->
+
+<section class="form-section">
+
+    <div class="section-title">
+
+        <div>
+
+            <h2>
+                👤 Visiteurs
+            </h2>
+
+            <p>
+                Ajoutez les visiteurs présents
+                dans le ménage.
+            </p>
+
+        </div>
+
+
+        <button
+            type="button"
+            id="btnAjouterVisiteur"
+            class="btn-add"
+        >
+            ➕ Ajouter un visiteur
+        </button>
+
+    </div>
+
+
+    <div id="listeVisiteurs"></div>
+
+</section>
+
+
+<!-- =====================================
+     ADRESSE
+===================================== -->
+
+<section class="form-section">
+
+    <h2>📍 Adresse du ménage</h2>
+
+    <div class="form-group">
+
+        <label>Adresse complète</label>
+
+        <textarea
+            id="adresse"
+            rows="2"
+            placeholder="Adresse complète du ménage"
+        ></textarea>
+
+    </div>
+
+</section>
+
+
+<!-- =====================================
+     BOUTONS
+===================================== -->
+
+<div class="buttons">
+
+    <button class="bt1"
+        type="submit"
+        id="saveButton"
+        class="btn-save"
+    >
+        💾 Enregistrer le ménage
+    </button>
+
+
+    <button class="bt2"
+        type="button"
+        id="btnNouveau"
+        class="btn-reset"
+    >
+        🆕 Nouveau
+    </button>
+
+</div>
+
+
+<p
+    id="message"
+    class="message"
+></p>
+
+
+</form>
+
+</main>
+
+
+<footer>
+
+    <p><b>
+        © 2026 🇧🇮 Burundi People Registry
+    </b></p>
+
+</footer>
+
+<script src="compte.js"></script>
+<script src="register.js"></script>
+
+
+</body

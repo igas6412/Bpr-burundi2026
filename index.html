@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Burundi People Registry</title>
+
+    <link
+        rel="stylesheet"
+        href="index.css"
+    >
+</head>
+
+
+<body>
+
+    <!-- =========================================
+         PAGE DE CONNEXION
+    ========================================== -->
+
+    <main class="login-container">
+
+        <section class="login-card">
+
+
+            <!-- =====================================
+                 LOGO
+            ====================================== -->
+
+            <div class="logo">
+                🇧🇮
+            </div>
+
+
+            <!-- =====================================
+                 TITRE
+            ====================================== -->
+
+            <h1>
+                BURUNDI PEOPLE REGISTRY
+            </h1>
+
+
+            <!-- =====================================
+                 SOUS-TITRE
+            ====================================== -->
+
+            <p  class="subtitle"><b>
+                Système de gestion des ménages
+                et des personnes
+           </b> </p>
+
+
+            <!-- =====================================
+                 FORMULAIRE DE CONNEXION
+            ====================================== -->
+
+            <form id="loginForm">
+
+
+                <!-- =================================
+                     NOM D'UTILISATEUR
+                ================================== -->
+
+                <div class="form-group">
+
+                    <label for="username">
+                        Nom d'utilisateur
+                    </label>
+
+                    <input
+                        type="text"
+                        id="username"
+                        name="username"
+                        placeholder="Entrez votre nom d'utilisateur"
+                        autocomplete="username"
+                        required
+                    >
+
+                </div>
+
+
+                <!-- =================================
+                     MOT DE PASSE
+                ================================== -->
+
+                <div class="form-group">
+
+                    <label for="password">
+                        Mot de passe
+                    </label>
+
+
+                    <div class="password-container">
+
+
+                        <!-- CHAMP MOT DE PASSE -->
+
+                        <input
+                            type="password"
+                            id="password"
+                            name="password"
+                            placeholder="Entrez votre mot de passe"
+                            autocomplete="current-password"
+                            required
+                        >
+
+
+                        <!-- =================================
+                             BOUTON AFFICHER / MASQUER
+                        ================================== -->
+
+                        <button
+                            type="button"
+                            id="togglePassword"
+                            class="toggle-password"
+                            aria-label="Afficher le mot de passe"
+                        >
+                            👁️
+                        </button>
+
+
+                    </div>
+
+                </div>
+
+
+                <!-- =================================
+                     BOUTON SE CONNECTER
+                ================================== -->
+
+                <button
+                    type="submit"
+                    class="btn-login"
+                >
+                    🔐 Se connecter
+                </button>
+
+
+                <!-- =================================
+                     MESSAGE D'ERREUR
+                ================================== -->
+
+                <p
+                    id="loginError"
+                    class="login-error"
+                    role="alert"
+                ></p>
+
+
+            </form>
+
+
+            <!-- =====================================
+                 INFORMATION DE SECURITE
+            ====================================== -->
+
+            <div class="login-info">
+
+                <span>
+                    🔒
+                </span>
+
+                <p>
+                    <strong>
+                        Accès sécurisé réservé aux managers
+                        et aux utilisateurs autorisés.
+                    </strong>
+                </p>
+
+            </div>
+
+
+        </section>
+
+    </main>
+
+
+    <!-- =========================================
+         JAVASCRIPT
+    ========================================== -->
+
+    <script src="index.js"></script>
+
+
+</body>
+
+</html>

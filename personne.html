@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Liste des personnes - Burundi People Registry</title>
+
+    <link rel="stylesheet" href="personne.css">
+
+    <!-- PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+
+</head>
+
+<body>
+
+<header class="header">
+
+    <div class="logo">
+
+        <h1>BURUNDI PEOPLE REGISTRY</h1>
+
+        <p>Liste des personnes enregistrées</p>
+
+    </div>
+
+    <nav>
+
+        <a href="manager.html">
+            🏠 Manager
+        </a>
+
+        <a href="menage.html">
+            🏠 Ménages
+        </a>
+
+        <a href="personne.html" class="active">
+            👥 Personnes
+        </a>
+
+        <a href="inscription.html">
+            ➕ Enregistrer
+        </a>
+
+        <button id="btnDeconnexion">
+            🚪 Déconnexion
+        </button>
+
+    </nav>
+
+</header>
+
+
+<main class="container">
+
+    <section class="page-title">
+
+        <h2>
+            👥 Liste des personnes enregistrées
+        </h2>
+
+        <p>
+            Les visiteurs ne sont pas inclus dans cette liste.
+        </p>
+
+    </section>
+
+
+    <!-- FILTRES -->
+
+    <section class="card">
+
+        <h3>
+            🔎 Filtres et recherche
+        </h3>
+
+        <div class="filters">
+
+            <div class="filter-group">
+
+                <label>Pays</label>
+
+                <select id="filtrePays">
+
+                    <option value="">
+                        Tous les pays
+                    </option>
+
+                    <option value="Burundi">
+                        Burundi
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <div class="filter-group">
+
+                <label>Province</label>
+
+                <select id="filtreProvince">
+
+                    <option value="">
+                        Toutes les provinces
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <div class="filter-group">
+
+                <label>Commune</label>
+
+                <select id="filtreCommune">
+
+                    <option value="">
+                        Toutes les communes
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <div class="filter-group">
+
+                <label>Zone</label>
+
+                <select id="filtreZone">
+
+                    <option value="">
+                        Toutes les zones
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <div class="filter-group">
+
+                <label>Colline</label>
+
+                <select id="filtreColline">
+
+                    <option value="">
+                        Toutes les collines
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <div class="filter-group">
+
+                <label>Sous-colline</label>
+
+                <select id="filtreSousColline">
+
+                    <option value="">
+                        Toutes les sous-collines
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <div class="filter-group">
+
+                <label>Chef de 10 maisons</label>
+
+                <select id="filtreChef10">
+
+                    <option value="">
+                        Tous les chefs
+                    </option>
+
+                </select>
+
+            </div>
+
+        </div>
+
+
+        <div class="search-box">
+
+            <input
+                type="search"
+                id="recherchePersonnes"
+                placeholder="Rechercher un nom, une province, commune..."
+            >
+
+            <button id="btnRecherche">
+                🔎 Rechercher
+            </button>
+
+            <button id="btnReset">
+                🔄 Réinitialiser
+            </button>
+
+        </div>
+
+    </section>
+
+
+    <!-- ACTIONS -->
+
+    <section class="actions-card">
+
+        <div>
+
+            <strong>
+                Total personnes :
+            </strong>
+
+            <span id="countPersonnes">
+                0
+            </span>
+
+        </div>
+
+
+        <div class="buttons">
+
+            <button
+                id="btnActualiser"
+                class="btn secondary"
+            >
+                🔄 Actualiser
+            </button>
+
+
+            <button
+                id="btnExportCSV"
+                class="btn success"
+            >
+                📊 Télécharger CSV
+            </button>
+
+
+            <button
+                id="btnExportPDF"
+                class="btn danger"
+            >
+                📄 Télécharger PDF
+            </button>
+
+        </div>
+
+    </section>
+
+
+    <!-- LISTE -->
+
+    <section class="card table-card">
+
+        <div class="table-container">
+
+            <table>
+
+                <thead>
+
+                    <tr>
+                        <th>
+                            N⁰
+                        </th>
+
+                        <th>
+                            Nom et prénom
+                        </th>
+
+                        <th>
+                            Genre
+                        </th>
+
+                        <th>
+                            Province
+                        </th>
+
+                        <th>
+                            Commune
+                        </th>
+
+                        <th>
+                            Zone
+                        </th>
+
+                        <th>
+                            Colline
+                        </th>
+
+                        <th>
+                            Sous-colline
+                        </th>
+
+                        <th>
+                            Nom et prénom du chef de 10 maisons
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody id="tablePersonnes">
+
+                    <tr>
+
+                        <td
+                            colspan="8"
+                            class="empty"
+                        >
+                            Aucune personne enregistrée.
+
+                        </td>
+
+                    </tr>
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </section>
+
+</main>
+
+
+<div id="message" class="message"></div>
+
+
+<script src="personne.js"></script>
+
+</body>
+
+</html>
