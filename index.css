@@ -70,7 +70,7 @@ body {
             rgba(255, 255, 255, 0.91),
             rgba(255, 255, 255, 0.95)
         ),
-        url("image/register.png");
+        url("register.png");
 
     background-size: cover;
     background-position: center;
