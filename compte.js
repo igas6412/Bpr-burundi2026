@@ -1,304 +1,368 @@
 
+// ============================================================
+// AFFICHER LES COMPTES FIRESTORE DANS LE TABLEAU
+// ============================================================
 
-        "Bweru": [
+async function afficherComptesFirestore() {
 
-            "Bweru",
+    const table =
+        document.getElementById("tableUtilisateurs");
 
-            "Gashawe",
-
-            "Masama",
-
-            "Mubavu",
-
-            "Ntunda",
-
-            "Nzozi"
-
-        ],
+    const compteur =
+        document.getElementById("countUtilisateurs");
 
 
-
-        "Rusengo": [
-
-            "Bunogera",
-
-            "Buruhukiro",
-
-            "Gisoro",
-
-            "Kirambi",
-
-            "Migege",
-
-            "Nganji",
-
-            "Nyagutoha"
-
-        ],
+    if (!table) {
+        console.warn(
+            "tableUtilisateurs n'existe pas dans le HTML."
+        );
+        return;
+    }
 
 
+    try {
 
-        "Ruyigi": [
+        // Charger les comptes depuis Firebase
+        const comptes =
+            await window.BPR_FIREBASE
+                .chargerComptesFirestore();
 
-            "Dutwe",
 
-            "Gahemba",
+        // Filtrer selon le territoire du compte connecté
+        const comptesAutorises =
+            window.BPR_FIREBASE
+                .filtrerComptesParTerritoire(
+                    comptes
+                );
 
-            "Kigamba",
 
-            "Ngarama",
+        // Compteur
+        if (compteur) {
 
-            "Nyarunazi",
+            compteur.textContent =
+                comptesAutorises.length;
 
-            "Ruhwago",
+        }
 
-            "Rukaragata",
 
-            "Ruyigi",
+        // Vider le tableau
+        table.innerHTML = "";
 
-            "Quartier Gasanda",
 
-            "Quartier Kinyabakecuru",
+        // Aucun compte
+        if (comptesAutorises.length === 0) {
 
-            "Quartier Sanzu"
+            table.innerHTML = `
+                <tr>
+                    <td colspan="10"
+                        style="text-align:center;">
+                        Aucun compte trouvé.
+                    </td>
+                </tr>
+            `;
 
-        ]
+            return;
+        }
+
+
+        // Afficher chaque compte
+        comptesAutorises.forEach(
+            (compte) => {
+
+                const ligne =
+                    document.createElement("tr");
+
+
+                ligne.innerHTML = `
+
+                    <td>
+                        ${echapperHTML(
+                            compte.nomUtilisateur
+                        )}
+                    </td>
+
+                    <td>
+                        ${echapperHTML(
+                            compte.identifiant
+                        )}
+                    </td>
+
+                    <td>
+                        ${echapperHTML(
+                            compte.role
+                        )}
+                    </td>
+
+                    <td>
+                        ${echapperHTML(
+                            compte.province
+                        )}
+                    </td>
+
+                    <td>
+                        ${echapperHTML(
+                            compte.commune
+                        )}
+                    </td>
+
+                    <td>
+                        ${echapperHTML(
+                            compte.zone
+                        )}
+                    </td>
+
+                    <td>
+                        ${echapperHTML(
+                            compte.colline
+                        )}
+                    </td>
+
+                    <td>
+                        ${echapperHTML(
+                            compte.creePar
+                        )}
+                    </td>
+
+                    <td>
+                        <button
+                            type="button"
+                            class="btn-voir"
+                            onclick="voirCompte('${compte.id}')">
+                            👁 Voir
+                        </button>
+
+                        <button
+                            type="button"
+                            class="btn-modifier"
+                            onclick="modifierCompte('${compte.id}')">
+                            ✏️ Modifier
+                        </button>
+
+                        <button
+                            type="button"
+                            class="btn-supprimer"
+                            onclick="supprimerCompte('${compte.id}')">
+                            🗑 Supprimer
+                        </button>
+                    </td>
+
+                `;
+
+
+                table.appendChild(ligne);
+
+            }
+        );
+
+
+    } catch (erreur) {
+
+        console.error(
+            "Erreur affichage comptes :",
+            erreur
+        );
+
+        table.innerHTML = `
+            <tr>
+                <td colspan="10"
+                    style="text-align:center;">
+                    Erreur lors du chargement des comptes.
+                </td>
+            </tr>
+        `;
 
     }
 
-};
+}
 
-const GITEGA = {
 
+// ============================================================
+// PROTECTION CONTRE HTML
+// ============================================================
 
+function echapperHTML(valeur) {
 
-    // =========================
+    return String(valeur || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
 
-    // COMMUNE BUGENDANA
+}
 
-    // =========================
 
-    "BUGENDANA": {
+// ============================================================
+// VOIR UN COMPTE
+// ============================================================
 
+async function voirCompte(id) {
 
+    try {
 
-        "Bitare": [
+        const comptes =
+            await window.BPR_FIREBASE
+                .chargerComptesFirestore();
 
-            "Bitare",
 
-            "Carire",
+        const compte =
+            comptes.find(
+                c => c.id === id
+            );
 
-            "Gaterama",
 
-            "Gitongo",
+        if (!compte) {
 
-            "Kibasi",
+            alert(
+                "Compte introuvable."
+            );
 
-            "Kibungo",
+            return;
+        }
 
-            "Runyeri"
 
-        ],
+        alert(
+`INFORMATIONS DU COMPTE
 
+Nom : ${compte.nomUtilisateur || ""}
 
+Identifiant : ${compte.identifiant || ""}
 
-        "Bugendana": [
+Rôle : ${compte.role || ""}
 
-            "Cishwa",
+Statut : ${compte.statut || ""}
 
-            "Jenda",
+Province : ${compte.province || ""}
 
-            "Mugitega",
+Commune : ${compte.commune || ""}
 
-            "Mukoro",
+Zone : ${compte.zone || ""}
 
-            "Mwwire",
+Colline : ${compte.colline || ""}
 
-            "Nkanda",
+Créé par : ${compte.creePar || ""}`
+        );
 
-            "Rwingiri"
 
-        ],
+    } catch (erreur) {
 
+        console.error(
+            erreur
+        );
 
+        alert(
+            "Impossible d'afficher le compte."
+        );
 
-        "Gitongo": [
+    }
 
-            "Gitongo",
+}
 
-            "Masango",
 
-            "Muririmbo",
+// ============================================================
+// SUPPRIMER UN COMPTE
+// ============================================================
 
-            "Muyange",
+async function supprimerCompte(id) {
 
-            "Muzenga",
+    const confirmation =
+        confirm(
+            "Voulez-vous vraiment supprimer ce compte ?"
+        );
 
-            "Mwumba",
 
-            "Nkon(g)we"
+    if (!confirmation) {
+        return;
+    }
 
-        ],
 
+    try {
 
+        const comptes =
+            await window.BPR_FIREBASE
+                .chargerComptesFirestore();
 
-        "Mugera": [
 
-            "Gitora",
+        const compte =
+            comptes.find(
+                c => c.id === id
+            );
 
-            "Mirama",
 
-            "Nyamagana",
+        if (!compte) {
 
-            "Rushanga"
+            alert(
+                "Compte introuvable."
+            );
 
-        ],
+            return;
+        }
 
 
+        // Vérifier le territoire
+        if (
+            !window.BPR_FIREBASE
+                .compteDansTerritoire(
+                    obtenirCompteConnecte(),
+                    compte
+                )
+        ) {
 
-        "Mutaho": [
+            alert(
+                "Vous n'êtes pas autorisé à supprimer ce compte."
+            );
 
-            "Bigera",
+            return;
+        }
 
-            "Mushikanwa",
 
-            "Mutaho",
+        const resultat =
+            await window.BPR_FIREBASE
+                .supprimerCompteFirestore(
+                    id
+                );
 
-            "Nyabisaka",
 
-            "Nyangungu",
+        if (resultat) {
 
-            "Quartier Bigera",
+            alert(
+                "Compte supprimé avec succès."
+            );
 
-            "Quartier Kigwati"
 
-        ],
+            await afficherComptesFirestore();
 
+        }
 
 
-        "Mutoyi": [
+    } catch (erreur) {
 
-            "Mutoyi",
+        console.error(
+            erreur
+        );
 
-            "Kivuvu",
+        alert(
+            "Erreur lors de la suppression."
+        );
 
-            "Nyagisenyi",
+    }
 
-            "Nyakeru"
+}
 
-        ],
 
+// ============================================================
+// CHARGER AUTOMATIQUEMENT LA LISTE
+// ============================================================
 
+document.addEventListener(
+    "DOMContentLoaded",
+    function () {
 
-        "Rwisabi": [
+        afficherComptesFirestore();
 
-            "Gerengabo",
-
-            "Kidasha",
-
-            "Kinyinya",
-
-            "Kivoga",
-
-            "Ngoma",
-
-            "Nzove",
-
-            "Rurengera"
-
-        ]
-
-    },
-
-
-
-
-
-    // =========================
-
-    // COMMUNE GISHUBI
-
-    // =========================
-
-    "GISHUBI": {
-
-
-
-        "Bukirasazi": [
-
-            "Bukirasazi",
-
-            "Migoni",
-
-            "Mpingwe",
-
-            "Nyambuye",
-
-            "Rugoma",
-
-            "Rwinyana",
-
-            "Shaya"
-
-        ],
-
-
-
-        "Bukoro": [
-
-            "Bihomvora",
-
-            "Bikingi",
-
-            "Bukoro",
-
-            "Jurwe",
-
-            "Masare",
-
-            "Muhororo"
-
-        ],
-
-
-
-        "Buraza": [
-
-            "Bubaji",
-
-            "Buraza",
-
-            "Buriza",
-
-            "Gicum(b)i",
-
-            "Kabumbe",
-
-            "Musebeyi",
-
-            "Ndava"
-
-        ],
-
-
-
-        "Butezi": [
-
-            "Butemba",
-
-            "Butezi",
-
-            "Muyange",
-
-            "Ndago"
-
-        ],
-
-
-
-        "Gishubi": [
-
-
+    }
+);
+        
 // ============================================================
 // BURUNDI PEOPLE REGISTRY
 // COMPTE.JS + FIRESTORE
