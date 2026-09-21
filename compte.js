@@ -1,5 +1,559 @@
 
 
+// ============================================================
+// BURUNDI PEOPLE REGISTRY
+// COMPTE.JS + FIRESTORE
+// ============================================================
+
+// Firebase Firestore
+import { db } from "./firebase-config.js";
+
+import {
+    collection,
+    addDoc,
+    getDocs,
+    doc,
+    updateDoc,
+    deleteDoc,
+    serverTimestamp
+} from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
+
+
+// ============================================================
+// COLLECTION FIRESTORE
+// ============================================================
+
+const COMPTES_COLLECTION = "comptes";
+
+
+// ============================================================
+// VARIABLES
+// ============================================================
+
+let compteEnModification = null;
+
+
+// ============================================================
+// OBTENIR LE COMPTE CONNECTÉ
+// ============================================================
+
+function obtenirCompteConnecte() {
+
+    const sources = [
+        "BPR_COMPTE_CONNECTE",
+        "BPR_USER",
+        "currentUser",
+        "utilisateurConnecte"
+    ];
+
+    for (const cle of sources) {
+
+        const valeur = localStorage.getItem(cle);
+
+        if (!valeur) continue;
+
+        try {
+
+            const compte = JSON.parse(valeur);
+
+            if (compte && typeof compte === "object") {
+                return compte;
+            }
+
+        } catch (erreur) {
+
+            console.warn(
+                "Impossible de lire le compte :",
+                cle
+            );
+
+        }
+    }
+
+    // Compte prototype si aucun compte n'est encore connecté
+    return {
+        nomUtilisateur: "Administrateur National",
+        identifiant: "admin-national",
+        role: "Manager National",
+        province: "",
+        commune: "",
+        zone: "",
+        colline: ""
+    };
+}
+
+
+// ============================================================
+// COMPTE CONNECTÉ
+// ============================================================
+
+const compteConnecte = obtenirCompteConnecte();
+
+
+// ============================================================
+// NIVEAU DES RÔLES
+// ============================================================
+
+const NIVEAU_ROLE = {
+
+    "Utilisateur": 1,
+
+    "Manager Zonal": 2,
+
+    "Manager Communal": 3,
+
+    "Manager Provincial": 4,
+
+    "Manager National": 5
+
+};
+
+
+// ============================================================
+// NORMALISER UNE VALEUR
+// ============================================================
+
+function normaliser(valeur) {
+
+    return String(valeur || "")
+        .trim()
+        .toLowerCase();
+
+}
+
+
+// ============================================================
+// OBTENIR LE NIVEAU DU RÔLE
+// ============================================================
+
+function niveauRole(role) {
+
+    return NIVEAU_ROLE[role] || 0;
+
+}
+
+
+// ============================================================
+// VÉRIFIER SI UN TERRITOIRE APPARTIENT AU COMPTE
+// ============================================================
+
+function compteDansTerritoire(compte, donnees) {
+
+    if (!compte || !donnees) {
+        return false;
+    }
+
+
+    // Manager National
+    if (compte.role === "Manager National") {
+        return true;
+    }
+
+
+    // Province
+    if (
+        compte.province &&
+        donnees.province &&
+        normaliser(compte.province) !==
+        normaliser(donnees.province)
+    ) {
+        return false;
+    }
+
+
+    // Commune
+    if (
+        niveauRole(compte.role) >= 3 &&
+        compte.commune &&
+        donnees.commune &&
+        normaliser(compte.commune) !==
+        normaliser(donnees.commune)
+    ) {
+        return false;
+    }
+
+
+    // Zone
+    if (
+        niveauRole(compte.role) >= 2 &&
+        compte.zone &&
+        donnees.zone &&
+        normaliser(compte.zone) !==
+        normaliser(donnees.zone)
+    ) {
+        return false;
+    }
+
+
+    // Colline
+    if (
+        compte.role === "Utilisateur" &&
+        compte.colline &&
+        donnees.colline &&
+        normaliser(compte.colline) !==
+        normaliser(donnees.colline)
+    ) {
+        return false;
+    }
+
+
+    return true;
+}
+
+
+// ============================================================
+// VÉRIFIER SI LE COMPTE PEUT CRÉER UN AUTRE RÔLE
+// ============================================================
+
+function peutCreerRole(roleACreer) {
+
+    const niveauConnecte =
+        niveauRole(compteConnecte.role);
+
+    const niveauNouveau =
+        niveauRole(roleACreer);
+
+
+    if (!niveauConnecte || !niveauNouveau) {
+        return false;
+    }
+
+
+    // Manager National peut créer tous les comptes
+    if (
+        compteConnecte.role ===
+        "Manager National"
+    ) {
+        return true;
+    }
+
+
+    // Un manager ne crée pas un rôle supérieur
+    return niveauNouveau < niveauConnecte;
+}
+
+
+// ============================================================
+// VÉRIFIER LE TERRITOIRE AVANT CRÉATION
+// ============================================================
+
+function territoireAutorise(donnees) {
+
+    if (
+        compteConnecte.role ===
+        "Manager National"
+    ) {
+        return true;
+    }
+
+
+    return compteDansTerritoire(
+        compteConnecte,
+        donnees
+    );
+}
+
+
+// ============================================================
+// CRÉER UN COMPTE FIRESTORE
+// ============================================================
+
+async function creerCompteFirestore(donnees) {
+
+    try {
+
+        const compte = {
+
+            nomUtilisateur:
+                donnees.nomUtilisateur || "",
+
+            identifiant:
+                donnees.identifiant || "",
+
+            role:
+                donnees.role || "",
+
+            statut:
+                donnees.statut || "Actif",
+
+            province:
+                donnees.province || "",
+
+            commune:
+                donnees.commune || "",
+
+            zone:
+                donnees.zone || "",
+
+            colline:
+                donnees.colline || "",
+
+            creePar:
+                compteConnecte.nomUtilisateur ||
+                compteConnecte.identifiant ||
+                "Administrateur National",
+
+            creeParRole:
+                compteConnecte.role ||
+                "Manager National",
+
+            creeParIdentifiant:
+                compteConnecte.identifiant ||
+                "admin-national",
+
+            creeLe:
+                serverTimestamp()
+
+        };
+
+
+        const reference =
+            await addDoc(
+                collection(
+                    db,
+                    COMPTES_COLLECTION
+                ),
+                compte
+            );
+
+
+        console.log(
+            "Compte créé avec succès :",
+            reference.id
+        );
+
+
+        return reference.id;
+
+    } catch (erreur) {
+
+        console.error(
+            "Erreur création compte :",
+            erreur
+        );
+
+        throw erreur;
+    }
+}
+
+
+// ============================================================
+// LIRE TOUS LES COMPTES FIRESTORE
+// ============================================================
+
+async function chargerComptesFirestore() {
+
+    try {
+
+        const snapshot =
+            await getDocs(
+                collection(
+                    db,
+                    COMPTES_COLLECTION
+                )
+            );
+
+
+        const comptes = [];
+
+
+        snapshot.forEach((document) => {
+
+            comptes.push({
+
+                id: document.id,
+
+                ...document.data()
+
+            });
+
+        });
+
+
+        return comptes;
+
+    } catch (erreur) {
+
+        console.error(
+            "Erreur chargement comptes :",
+            erreur
+        );
+
+        return [];
+    }
+}
+
+
+// ============================================================
+// FILTRER LES COMPTES SELON LE TERRITOIRE
+// ============================================================
+
+function filtrerComptesParTerritoire(
+    comptes
+) {
+
+    return comptes.filter(
+        (compte) => {
+
+            return compteDansTerritoire(
+                compteConnecte,
+                compte
+            );
+
+        }
+    );
+
+}
+
+
+// ============================================================
+// MODIFIER UN COMPTE
+// ============================================================
+
+async function modifierCompteFirestore(
+    id,
+    nouvellesDonnees
+) {
+
+    try {
+
+        const reference =
+            doc(
+                db,
+                COMPTES_COLLECTION,
+                id
+            );
+
+
+        await updateDoc(
+            reference,
+            {
+
+                nomUtilisateur:
+                    nouvellesDonnees.nomUtilisateur || "",
+
+                identifiant:
+                    nouvellesDonnees.identifiant || "",
+
+                role:
+                    nouvellesDonnees.role || "",
+
+                statut:
+                    nouvellesDonnees.statut || "Actif",
+
+                province:
+                    nouvellesDonnees.province || "",
+
+                commune:
+                    nouvellesDonnees.commune || "",
+
+                zone:
+                    nouvellesDonnees.zone || "",
+
+                colline:
+                    nouvellesDonnees.colline || "",
+
+                modifieLe:
+                    serverTimestamp(),
+
+                modifiePar:
+                    compteConnecte.nomUtilisateur ||
+                    compteConnecte.identifiant ||
+                    "Administrateur National"
+
+            }
+        );
+
+
+        console.log(
+            "Compte modifié :",
+            id
+        );
+
+
+        return true;
+
+    } catch (erreur) {
+
+        console.error(
+            "Erreur modification compte :",
+            erreur
+        );
+
+        return false;
+    }
+
+}
+
+
+// ============================================================
+// SUPPRIMER UN COMPTE
+// ============================================================
+
+async function supprimerCompteFirestore(id) {
+
+    try {
+
+        await deleteDoc(
+            doc(
+                db,
+                COMPTES_COLLECTION,
+                id
+            )
+        );
+
+
+        console.log(
+            "Compte supprimé :",
+            id
+        );
+
+
+        return true;
+
+    } catch (erreur) {
+
+        console.error(
+            "Erreur suppression compte :",
+            erreur
+        );
+
+        return false;
+    }
+
+}
+
+
+// ============================================================
+// EXPORTER LES FONCTIONS
+// ============================================================
+
+window.BPR_FIREBASE = {
+
+    creerCompteFirestore,
+
+    chargerComptesFirestore,
+
+    filtrerComptesParTerritoire,
+
+    modifierCompteFirestore,
+
+    supprimerCompteFirestore,
+
+    obtenirCompteConnecte,
+
+    compteDansTerritoire,
+
+    peutCreerRole,
+
+    territoireAutorise
+
+};
+
+
+
+
+
 // ======================================================
 
 // COMPTE.JS
