@@ -1,5 +1,304 @@
 
 
+        "Bweru": [
+
+            "Bweru",
+
+            "Gashawe",
+
+            "Masama",
+
+            "Mubavu",
+
+            "Ntunda",
+
+            "Nzozi"
+
+        ],
+
+
+
+        "Rusengo": [
+
+            "Bunogera",
+
+            "Buruhukiro",
+
+            "Gisoro",
+
+            "Kirambi",
+
+            "Migege",
+
+            "Nganji",
+
+            "Nyagutoha"
+
+        ],
+
+
+
+        "Ruyigi": [
+
+            "Dutwe",
+
+            "Gahemba",
+
+            "Kigamba",
+
+            "Ngarama",
+
+            "Nyarunazi",
+
+            "Ruhwago",
+
+            "Rukaragata",
+
+            "Ruyigi",
+
+            "Quartier Gasanda",
+
+            "Quartier Kinyabakecuru",
+
+            "Quartier Sanzu"
+
+        ]
+
+    }
+
+};
+
+const GITEGA = {
+
+
+
+    // =========================
+
+    // COMMUNE BUGENDANA
+
+    // =========================
+
+    "BUGENDANA": {
+
+
+
+        "Bitare": [
+
+            "Bitare",
+
+            "Carire",
+
+            "Gaterama",
+
+            "Gitongo",
+
+            "Kibasi",
+
+            "Kibungo",
+
+            "Runyeri"
+
+        ],
+
+
+
+        "Bugendana": [
+
+            "Cishwa",
+
+            "Jenda",
+
+            "Mugitega",
+
+            "Mukoro",
+
+            "Mwwire",
+
+            "Nkanda",
+
+            "Rwingiri"
+
+        ],
+
+
+
+        "Gitongo": [
+
+            "Gitongo",
+
+            "Masango",
+
+            "Muririmbo",
+
+            "Muyange",
+
+            "Muzenga",
+
+            "Mwumba",
+
+            "Nkon(g)we"
+
+        ],
+
+
+
+        "Mugera": [
+
+            "Gitora",
+
+            "Mirama",
+
+            "Nyamagana",
+
+            "Rushanga"
+
+        ],
+
+
+
+        "Mutaho": [
+
+            "Bigera",
+
+            "Mushikanwa",
+
+            "Mutaho",
+
+            "Nyabisaka",
+
+            "Nyangungu",
+
+            "Quartier Bigera",
+
+            "Quartier Kigwati"
+
+        ],
+
+
+
+        "Mutoyi": [
+
+            "Mutoyi",
+
+            "Kivuvu",
+
+            "Nyagisenyi",
+
+            "Nyakeru"
+
+        ],
+
+
+
+        "Rwisabi": [
+
+            "Gerengabo",
+
+            "Kidasha",
+
+            "Kinyinya",
+
+            "Kivoga",
+
+            "Ngoma",
+
+            "Nzove",
+
+            "Rurengera"
+
+        ]
+
+    },
+
+
+
+
+
+    // =========================
+
+    // COMMUNE GISHUBI
+
+    // =========================
+
+    "GISHUBI": {
+
+
+
+        "Bukirasazi": [
+
+            "Bukirasazi",
+
+            "Migoni",
+
+            "Mpingwe",
+
+            "Nyambuye",
+
+            "Rugoma",
+
+            "Rwinyana",
+
+            "Shaya"
+
+        ],
+
+
+
+        "Bukoro": [
+
+            "Bihomvora",
+
+            "Bikingi",
+
+            "Bukoro",
+
+            "Jurwe",
+
+            "Masare",
+
+            "Muhororo"
+
+        ],
+
+
+
+        "Buraza": [
+
+            "Bubaji",
+
+            "Buraza",
+
+            "Buriza",
+
+            "Gicum(b)i",
+
+            "Kabumbe",
+
+            "Musebeyi",
+
+            "Ndava"
+
+        ],
+
+
+
+        "Butezi": [
+
+            "Butemba",
+
+            "Butezi",
+
+            "Muyange",
+
+            "Ndago"
+
+        ],
+
+
+
+        "Gishubi": [
+
+
 // ============================================================
 // BURUNDI PEOPLE REGISTRY
 // COMPTE.JS + FIRESTORE
