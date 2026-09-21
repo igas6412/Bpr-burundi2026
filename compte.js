@@ -1,3 +1,6 @@
+import {
+    testerFirebase
+} from "./bpr-firebase.js";
 
 // ============================================================
 // AFFICHER LES COMPTES FIRESTORE DANS LE TABLEAU
