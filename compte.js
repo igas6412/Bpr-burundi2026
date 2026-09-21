@@ -10949,3 +10949,267 @@ window.modifierUtilisateur = modifierUtilisateur;
 window.supprimerUtilisateur = supprimerUtilisateur;
 window.annulerModification = annulerModification;
 window.afficherUtilisateurs = afficherUtilisateurs;
+
+
+
+// ============================================================
+// CRÉATION D'UN COMPTE DEPUIS LE FORMULAIRE
+// ============================================================
+
+const formulaireCompte =
+    document.getElementById("formCreerUtilisateur");
+
+const boutonCreer =
+    document.getElementById("btnCreerUtilisateur");
+
+const messageCompte =
+    document.getElementById("messageUtilisateur");
+
+
+if (formulaireCompte) {
+
+    formulaireCompte.addEventListener(
+        "submit",
+        async function (event) {
+
+            event.preventDefault();
+
+
+            try {
+
+                const nomUtilisateur =
+                    document
+                        .getElementById("nomUtilisateur")
+                        ?.value
+                        .trim();
+
+                const identifiant =
+                    document
+                        .getElementById("identifiantUtilisateur")
+                        ?.value
+                        .trim();
+
+                const motDePasse =
+                    document
+                        .getElementById("motDePasseUtilisateur")
+                        ?.value;
+
+                const confirmation =
+                    document
+                        .getElementById("confirmationMotDePasse")
+                        ?.value;
+
+                const role =
+                    document
+                        .getElementById("roleUtilisateur")
+                        ?.value;
+
+                const statut =
+                    document
+                        .getElementById("statutUtilisateur")
+                        ?.value || "Actif";
+
+
+                // ============================================
+                // VÉRIFICATIONS
+                // ============================================
+
+                if (
+                    !nomUtilisateur ||
+                    !identifiant ||
+                    !motDePasse ||
+                    !confirmation ||
+                    !role
+                ) {
+
+                    afficherMessageCompte(
+                        "Veuillez remplir tous les champs obligatoires.",
+                        "error"
+                    );
+
+                    return;
+                }
+
+
+                if (motDePasse !== confirmation) {
+
+                    afficherMessageCompte(
+                        "Les mots de passe ne correspondent pas.",
+                        "error"
+                    );
+
+                    return;
+                }
+
+
+                // Vérifier le rôle
+                if (
+                    !peutCreerRole(role)
+                ) {
+
+                    afficherMessageCompte(
+                        "Vous n'êtes pas autorisé à créer ce type de compte.",
+                        "error"
+                    );
+
+                    return;
+                }
+
+
+                // ============================================
+                // TERRITOIRE
+                // ============================================
+
+                const province =
+                    document
+                        .getElementById("provinceUtilisateur")
+                        ?.value || "";
+
+                const commune =
+                    document
+                        .getElementById("communeUtilisateur")
+                        ?.value || "";
+
+                const zone =
+                    document
+                        .getElementById("zoneUtilisateur")
+                        ?.value || "";
+
+                const colline =
+                    document
+                        .getElementById("collineUtilisateur")
+                        ?.value || "";
+
+
+                const territoire = {
+
+                    province,
+                    commune,
+                    zone,
+                    colline
+
+                };
+
+
+                if (
+                    !territoireAutorise(
+                        territoire
+                    )
+                ) {
+
+                    afficherMessageCompte(
+                        "Ce territoire ne correspond pas à vos autorisations.",
+                        "error"
+                    );
+
+                    return;
+                }
+
+
+                // ============================================
+                // DONNÉES DU COMPTE
+                // ============================================
+
+                const donneesCompte = {
+
+                    nomUtilisateur,
+
+                    identifiant,
+
+                    role,
+
+                    statut,
+
+                    province,
+
+                    commune,
+
+                    zone,
+
+                    colline
+
+                };
+
+
+                // ============================================
+                // ENVOYER À FIRESTORE
+                // ============================================
+
+                if (
+                    window.BPR_FIREBASE
+                ) {
+
+                    await window.BPR_FIREBASE
+                        .creerCompteFirestore(
+                            donneesCompte
+                        );
+
+                } else {
+
+                    throw new Error(
+                        "Firebase BPR n'est pas chargé."
+                    );
+
+                }
+
+
+                // ============================================
+                // SUCCÈS
+                // ============================================
+
+                afficherMessageCompte(
+                    "Compte créé avec succès dans Firebase.",
+                    "success"
+                );
+
+
+                formulaireCompte.reset();
+
+
+                // Actualiser la liste
+                await afficherComptesFirestore();
+
+
+            } catch (erreur) {
+
+                console.error(
+                    erreur
+                );
+
+                afficherMessageCompte(
+                    "Erreur lors de la création du compte.",
+                    "error"
+                );
+
+            }
+
+        }
+    );
+
+}
+
+
+// ============================================================
+// MESSAGE
+// ============================================================
+
+function afficherMessageCompte(
+    message,
+    type
+) {
+
+    if (!messageCompte) {
+        return;
+    }
+
+
+    messageCompte.textContent =
+        message;
+
+
+    messageCompte.className =
+        type === "success"
+            ? "message-success"
+            : "message-error";
+
+}
