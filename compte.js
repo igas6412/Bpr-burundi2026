@@ -1,5 +1,4 @@
 
-
 import {
     creerCompte,
     chargerComptes,
@@ -9390,11 +9389,6 @@ const dataAdministrative = {
 
 };
 
-// Compatibilité avec register.js (script classique).
-window.COMMUNES_PAR_PROVINCE = COMMUNES_PAR_PROVINCE;
-window.dataAdministrative = dataAdministrative;
-
-
 
 
 // ======================================================
@@ -9817,62 +9811,27 @@ function chargerCollines() {
 
 // 8. EVENTS
 
-// ======================================================
-
-
-
-if (provinceUtilisateur) {
-
-
-
-    provinceUtilisateur.addEventListener(
-
-        "change",
-
-        chargerCommunes
-
-    );
-
+// Cascade : Province -> Commune -> Zone -> Colline / Quartier.
+function initialiserSelecteursTerritoire() {
+    if (provinceUtilisateur && !provinceUtilisateur.dataset.bprReady) {
+        provinceUtilisateur.addEventListener("change", chargerCommunes);
+        provinceUtilisateur.dataset.bprReady = "1";
+    }
+    if (communeUtilisateur && !communeUtilisateur.dataset.bprReady) {
+        communeUtilisateur.addEventListener("change", chargerZones);
+        communeUtilisateur.dataset.bprReady = "1";
+    }
+    if (zoneUtilisateur && !zoneUtilisateur.dataset.bprReady) {
+        zoneUtilisateur.addEventListener("change", chargerCollines);
+        zoneUtilisateur.dataset.bprReady = "1";
+    }
 }
 
+initialiserSelecteursTerritoire();
 
 
-if (communeUtilisateur) {
-
-
-
-    communeUtilisateur.addEventListener(
-
-        "change",
-
-        chargerZones
-
-    );
-
-}
-
-
-
-if (zoneUtilisateur) {
-
-
-
-    zoneUtilisateur.addEventListener(
-
-        "change",
-
-        chargerCollines
-
-    );
-
-}
-
-
-
-
-
-// ======================================================
 // 9. GESTION DES COMPTES AVEC FIREBASE
+
 // ======================================================
 
 const formCreerUtilisateur =
@@ -9980,89 +9939,31 @@ function messageErreurFirebase(erreur) {
 
 function gererChampsSelonRole() {
 
-    if (
-        !roleUtilisateur ||
-        !provinceUtilisateur ||
-        !communeUtilisateur ||
-        !zoneUtilisateur ||
-        !collineUtilisateur
-    ) {
+    if (!roleUtilisateur || !provinceUtilisateur ||
+        !communeUtilisateur || !zoneUtilisateur ||
+        !collineUtilisateur) {
         return;
     }
 
     const role = roleUtilisateur.value;
+    const territoireLibre = role !== "Manager National";
 
-    provinceUtilisateur.disabled = true;
-    communeUtilisateur.disabled = true;
-    zoneUtilisateur.disabled = true;
-    collineUtilisateur.disabled = true;
+    // Compte territorial : sélection complète jusqu'à la colline.
+    provinceUtilisateur.disabled = !territoireLibre;
+    communeUtilisateur.disabled = !territoireLibre;
+    zoneUtilisateur.disabled = !territoireLibre;
+    collineUtilisateur.disabled = !territoireLibre;
 
     if (paysUtilisateur) {
-        paysUtilisateur.disabled = true;
         paysUtilisateur.value = "BURUNDI";
+        paysUtilisateur.disabled = false;
     }
 
-
-    // Manager National : aucun territoire à choisir.
     if (role === "Manager National") {
-
-        if (paysUtilisateur) {
-            paysUtilisateur.disabled = false;
-            paysUtilisateur.value = "BURUNDI";
-        }
-
         provinceUtilisateur.value = "";
         communeUtilisateur.value = "";
         zoneUtilisateur.value = "";
         collineUtilisateur.value = "";
-
-        return;
-    }
-
-
-    // Manager Provincial : province obligatoire.
-    if (role === "Manager Provincial") {
-
-        provinceUtilisateur.disabled = false;
-        communeUtilisateur.value = "";
-        zoneUtilisateur.value = "";
-        collineUtilisateur.value = "";
-
-        return;
-    }
-
-
-    // Manager Communal : province + commune.
-    if (role === "Manager Communal") {
-
-        provinceUtilisateur.disabled = false;
-        communeUtilisateur.disabled = false;
-        zoneUtilisateur.value = "";
-        collineUtilisateur.value = "";
-
-        return;
-    }
-
-
-    // Manager Zonal : province + commune + zone.
-    if (role === "Manager Zonal") {
-
-        provinceUtilisateur.disabled = false;
-        communeUtilisateur.disabled = false;
-        zoneUtilisateur.disabled = false;
-        collineUtilisateur.value = "";
-
-        return;
-    }
-
-
-    // Utilisateur : territoire complet jusqu'à la colline.
-    if (role === "Utilisateur") {
-
-        provinceUtilisateur.disabled = false;
-        communeUtilisateur.disabled = false;
-        zoneUtilisateur.disabled = false;
-        collineUtilisateur.disabled = false;
     }
 }
 
@@ -10073,36 +9974,15 @@ function gererChampsSelonRole() {
 
 function obtenirTerritoireCompte() {
 
-    const role =
-        roleUtilisateur?.value || "";
-
     const territoire = {
-
-        pays:
-            paysUtilisateur?.value ||
-            "BURUNDI",
-
-        province:
-            provinceUtilisateur?.value ||
-            "",
-
-        commune:
-            communeUtilisateur?.value ||
-            "",
-
-        zone:
-            zoneUtilisateur?.value ||
-            "",
-
-        colline:
-            collineUtilisateur?.value ||
-            ""
-
+        pays: paysUtilisateur?.value || "BURUNDI",
+        province: provinceUtilisateur?.value || "",
+        commune: communeUtilisateur?.value || "",
+        zone: zoneUtilisateur?.value || "",
+        colline: collineUtilisateur?.value || ""
     };
 
-
-    if (role === "Manager National") {
-
+    if (roleUtilisateur?.value === "Manager National") {
         territoire.pays = "BURUNDI";
         territoire.province = "";
         territoire.commune = "";
@@ -10110,86 +9990,27 @@ function obtenirTerritoireCompte() {
         territoire.colline = "";
     }
 
-
-    if (role === "Manager Provincial") {
-
-        territoire.commune = "";
-        territoire.zone = "";
-        territoire.colline = "";
-    }
-
-
-    if (role === "Manager Communal") {
-
-        territoire.zone = "";
-        territoire.colline = "";
-    }
-
-
-    if (role === "Manager Zonal") {
-
-        territoire.colline = "";
-    }
-
-
     return territoire;
 }
 
 
 function verifierTerritoire() {
 
-    const role =
-        roleUtilisateur?.value || "";
-
-    const territoire =
-        obtenirTerritoireCompte();
-
+    const role = roleUtilisateur?.value || "";
+    const territoire = obtenirTerritoireCompte();
 
     if (!role) {
         return "Veuillez sélectionner le type de compte.";
     }
 
-
     if (role === "Manager National") {
         return "";
     }
 
-
-    if (!territoire.province) {
-        return "Veuillez sélectionner une province.";
-    }
-
-
-    if (
-        (
-            role === "Manager Communal" ||
-            role === "Manager Zonal" ||
-            role === "Utilisateur"
-        ) &&
-        !territoire.commune
-    ) {
-        return "Veuillez sélectionner une commune.";
-    }
-
-
-    if (
-        (
-            role === "Manager Zonal" ||
-            role === "Utilisateur"
-        ) &&
-        !territoire.zone
-    ) {
-        return "Veuillez sélectionner une zone.";
-    }
-
-
-    if (
-        role === "Utilisateur" &&
-        !territoire.colline
-    ) {
-        return "Veuillez sélectionner une colline / quartier.";
-    }
-
+    if (!territoire.province) return "Veuillez sélectionner une province.";
+    if (!territoire.commune) return "Veuillez sélectionner une commune.";
+    if (!territoire.zone) return "Veuillez sélectionner une zone.";
+    if (!territoire.colline) return "Veuillez sélectionner une colline / quartier.";
 
     return "";
 }
