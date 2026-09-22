@@ -1,4 +1,5 @@
 
+
 import {
     creerCompte,
     chargerComptes,
@@ -9388,6 +9389,11 @@ const dataAdministrative = {
     "BUTANYERERA": BUTANYERERA
 
 };
+
+// Compatibilité avec register.js (script classique).
+window.COMMUNES_PAR_PROVINCE = COMMUNES_PAR_PROVINCE;
+window.dataAdministrative = dataAdministrative;
+
 
 
 
