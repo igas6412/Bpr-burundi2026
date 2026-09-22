@@ -1,19 +1,37 @@
-"use strict";
+
 
 /* ============================================================
    BURUNDI PEOPLE REGISTRY
    index.js
-   CONNEXION + SESSION + TERRITOIRE
+   CONNEXION FIREBASE + SESSION + TERRITOIRE
+   ============================================================ */
+
+import { connecter as connecterFirebase } from "./bpr-firebase.js";
+
+
+/* ============================================================
+   CONFIGURATION IGAS
    ============================================================ */
 
 const IGAS_USERNAME = "IGAS";
 const IGAS_PASSWORD = "123123";
-const USERS_KEY = "bpr_utilisateurs";
 
-const loginForm = document.getElementById("loginForm");
-const usernameInput = document.getElementById("username");
-const passwordInput = document.getElementById("password");
-const messageLogin = document.getElementById("messageLogin");
+
+/* ============================================================
+   ELEMENTS HTML
+   ============================================================ */
+
+const loginForm =
+    document.getElementById("loginForm");
+
+const usernameInput =
+    document.getElementById("username");
+
+const passwordInput =
+    document.getElementById("password");
+
+const messageLogin =
+    document.getElementById("messageLogin");
 
 
 /* ============================================================
@@ -21,6 +39,7 @@ const messageLogin = document.getElementById("messageLogin");
    ============================================================ */
 
 function normaliserTexte(valeur) {
+
     return String(valeur ?? "")
         .trim()
         .toLowerCase()
@@ -30,40 +49,13 @@ function normaliserTexte(valeur) {
 
 
 /* ============================================================
-   LIRE LES COMPTES
-   ============================================================ */
-
-function obtenirComptes() {
-    try {
-        const donnees = localStorage.getItem(USERS_KEY);
-
-        if (!donnees) {
-            return [];
-        }
-
-        const comptes = JSON.parse(donnees);
-
-        return Array.isArray(comptes) ? comptes : [];
-
-    } catch (erreur) {
-
-        console.error(
-            "Erreur lecture comptes :",
-            erreur
-        );
-
-        return [];
-    }
-}
-
-
-/* ============================================================
-   NORMALISER LE ROLE
+   NORMALISER ROLE
    ============================================================ */
 
 function normaliserRole(role) {
 
-    const valeur = normaliserTexte(role);
+    const valeur =
+        normaliserTexte(role);
 
     if (
         valeur === "manager national" ||
@@ -72,15 +64,21 @@ function normaliserRole(role) {
         return "Manager National";
     }
 
-    if (valeur === "manager provincial") {
+    if (
+        valeur === "manager provincial"
+    ) {
         return "Manager Provincial";
     }
 
-    if (valeur === "manager communal") {
+    if (
+        valeur === "manager communal"
+    ) {
         return "Manager Communal";
     }
 
-    if (valeur === "manager zonal") {
+    if (
+        valeur === "manager zonal"
+    ) {
         return "Manager Zonal";
     }
 
@@ -96,7 +94,8 @@ function normaliserRole(role) {
 
 
 /* ============================================================
-   NORMALISER LE COMPTE
+   NORMALISER COMPTE
+   Compatible avec Firebase et ancien système
    ============================================================ */
 
 function normaliserCompte(compte) {
@@ -105,27 +104,37 @@ function normaliserCompte(compte) {
         return null;
     }
 
-    const role = normaliserRole(compte.role);
-
-    /*
-     IMPORTANT :
-     On garde commune, zone et colline.
-     On ne les supprime PAS ici.
-    */
+    const role =
+        normaliserRole(compte.role);
 
     const resultat = {
 
-        id: compte.id ?? "",
+        id:
+            compte.id ??
+            compte.uid ??
+            "",
 
-        nom: compte.nom ?? "",
+        uid:
+            compte.uid ??
+            compte.id ??
+            "",
+
+        nom:
+            compte.nomUtilisateur ??
+            compte.nom ??
+            "",
+
+        nomUtilisateur:
+            compte.nomUtilisateur ??
+            compte.nom ??
+            "",
 
         identifiant:
-            compte.identifiant ?? "",
+            compte.identifiant ??
+            "",
 
-        motDePasse:
-            compte.motDePasse ?? "",
-
-        role: role,
+        role:
+            role,
 
         pays:
             compte.pays ||
@@ -149,111 +158,72 @@ function normaliserCompte(compte) {
 
         statut:
             compte.statut ||
-            "Actif"
+            "Actif",
+
+        creeParUid:
+            compte.creeParUid ||
+            "",
+
+        creePar:
+            compte.creePar ||
+            "",
+
+        creeParRole:
+            compte.creeParRole ||
+            ""
     };
 
 
     /* ========================================================
-       MANAGER NATIONAL
+       TERRITOIRE SELON LE ROLE
        ======================================================== */
 
-    if (role === "Manager National") {
+    if (
+        role === "Manager National"
+    ) {
 
-        resultat.pays = "BURUNDI";
+        resultat.pays =
+            "BURUNDI";
 
         resultat.province = "";
+        resultat.commune = "";
+        resultat.zone = "";
+        resultat.colline = "";
+    }
+
+    else if (
+        role === "Manager Provincial"
+    ) {
 
         resultat.commune = "";
+        resultat.zone = "";
+        resultat.colline = "";
+    }
+
+    else if (
+        role === "Manager Communal"
+    ) {
 
         resultat.zone = "";
-
         resultat.colline = "";
     }
 
-
-    /* ========================================================
-       MANAGER PROVINCIAL
-       ======================================================== */
-
-    else if (role === "Manager Provincial") {
-
-        resultat.province =
-            resultat.province || "";
-
-        resultat.commune = "";
-
-        resultat.zone = "";
+    else if (
+        role === "Manager Zonal"
+    ) {
 
         resultat.colline = "";
     }
-
-
-    /* ========================================================
-       MANAGER COMMUNAL
-       ======================================================== */
-
-    else if (role === "Manager Communal") {
-
-        resultat.province =
-            resultat.province || "";
-
-        resultat.commune =
-            resultat.commune || "";
-
-        resultat.zone = "";
-
-        resultat.colline = "";
-    }
-
-
-    /* ========================================================
-       MANAGER ZONAL
-       ======================================================== */
-
-    else if (role === "Manager Zonal") {
-
-        resultat.province =
-            resultat.province || "";
-
-        resultat.commune =
-            resultat.commune || "";
-
-        resultat.zone =
-            resultat.zone || "";
-
-        resultat.colline = "";
-    }
-
-
-    /* ========================================================
-       UTILISATEUR
-       ======================================================== */
-
-    else if (role === "Utilisateur") {
-
-        resultat.province =
-            resultat.province || "";
-
-        resultat.commune =
-            resultat.commune || "";
-
-        resultat.zone =
-            resultat.zone || "";
-
-        resultat.colline =
-            resultat.colline || "";
-    }
-
 
     return resultat;
 }
 
 
 /* ============================================================
-   SAUVEGARDER SESSION
+   SAUVEGARDER SESSION BPR
    ============================================================ */
 
-function connecter(compte) {
+function sauvegarderSession(compte) {
 
     const compteConnecte =
         normaliserCompte(compte);
@@ -268,9 +238,7 @@ function connecter(compte) {
     }
 
 
-    /* ========================================================
-       SESSION GENERALE
-       ======================================================== */
+    /* Session générale */
 
     localStorage.setItem(
         "isLoggedIn",
@@ -298,9 +266,7 @@ function connecter(compte) {
     );
 
 
-    /* ========================================================
-       TERRITOIRE
-       ======================================================== */
+    /* Territoire */
 
     localStorage.setItem(
         "userPays",
@@ -328,9 +294,7 @@ function connecter(compte) {
     );
 
 
-    /* ========================================================
-       COMPTE COMPLET
-       ======================================================== */
+    /* Compatibilité avec l'ancien système */
 
     localStorage.setItem(
         "bpr_current_user",
@@ -343,21 +307,31 @@ function connecter(compte) {
     );
 
 
-    /* ========================================================
-       DEBUG
-       ======================================================== */
+    /* IMPORTANT :
+       compte.js utilise cette clé. */
+
+    localStorage.setItem(
+        "BPR_COMPTE_CONNECTE",
+        JSON.stringify(compteConnecte)
+    );
+
 
     console.log(
         "===================================="
     );
 
     console.log(
-        "COMPTE CONNECTE"
+        "COMPTE BPR CONNECTE"
     );
 
     console.log(
         "Nom :",
         compteConnecte.nom
+    );
+
+    console.log(
+        "Identifiant :",
+        compteConnecte.identifiant
     );
 
     console.log(
@@ -389,13 +363,13 @@ function connecter(compte) {
         "===================================="
     );
 
-
     return true;
 }
 
 
 /* ============================================================
    CONNEXION IGAS
+   Compte national initial / secours
    ============================================================ */
 
 function connexionIGAS(
@@ -404,8 +378,15 @@ function connexionIGAS(
 ) {
 
     if (
-        username !== IGAS_USERNAME ||
-        password !== IGAS_PASSWORD
+        normaliserTexte(username) !==
+        normaliserTexte(IGAS_USERNAME)
+    ) {
+        return false;
+    }
+
+    if (
+        password !==
+        IGAS_PASSWORD
     ) {
         return false;
     }
@@ -415,7 +396,11 @@ function connexionIGAS(
 
         id: "IGAS",
 
+        uid: "IGAS",
+
         nom: "IGAS",
+
+        nomUtilisateur: "IGAS",
 
         identifiant: "IGAS",
 
@@ -432,97 +417,12 @@ function connexionIGAS(
         colline: "",
 
         statut: "Actif"
+
     };
 
 
-    return connecter(
+    return sauvegarderSession(
         compteIGAS
-    );
-}
-
-
-/* ============================================================
-   CONNEXION COMPTE CREE DANS COMPTE.JS
-   ============================================================ */
-
-function connexionCompte(
-    username,
-    password
-) {
-
-    const comptes =
-        obtenirComptes();
-
-
-    const compte =
-        comptes.find(
-            utilisateur => {
-
-                const identifiant =
-                    String(
-                        utilisateur.identifiant ||
-                        ""
-                    ).trim();
-
-
-                const motDePasse =
-                    String(
-                        utilisateur.motDePasse ||
-                        ""
-                    );
-
-
-                return (
-                    normaliserTexte(
-                        identifiant
-                    ) ===
-                    normaliserTexte(
-                        username
-                    )
-                    &&
-                    motDePasse ===
-                    password
-                );
-            }
-        );
-
-
-    if (!compte) {
-
-        return false;
-    }
-
-
-    /* ========================================================
-       VERIFICATION STATUT
-       ======================================================== */
-
-    const statut =
-        normaliserTexte(
-            compte.statut ||
-            "Actif"
-        );
-
-
-    if (
-        statut === "inactif"
-    ) {
-
-        afficherMessage(
-            "Ce compte est inactif.",
-            "error"
-        );
-
-        return false;
-    }
-
-
-    /* ========================================================
-       CONNEXION
-       ======================================================== */
-
-    return connecter(
-        compte
     );
 }
 
@@ -543,7 +443,6 @@ function afficherMessage(
         return;
     }
 
-
     messageLogin.textContent =
         message;
 
@@ -553,10 +452,72 @@ function afficherMessage(
 
 
 /* ============================================================
+   CONNEXION FIREBASE
+   ============================================================ */
+
+async function connexionFirebase(
+    username,
+    password
+) {
+
+    const compte =
+        await connecterFirebase(
+            username,
+            password
+        );
+
+
+    if (!compte) {
+
+        throw new Error(
+            "Compte BPR introuvable."
+        );
+    }
+
+
+    /* Vérification du statut */
+
+    const statut =
+        normaliserTexte(
+            compte.statut ||
+            "Actif"
+        );
+
+    if (
+        statut === "inactif"
+    ) {
+
+        throw new Error(
+            "Ce compte est inactif."
+        );
+    }
+
+
+    /* Sauvegarde dans toutes les clés nécessaires */
+
+    const ok =
+        sauvegarderSession(
+            compte
+        );
+
+
+    if (!ok) {
+
+        throw new Error(
+            "Impossible de sauvegarder la session."
+        );
+    }
+
+
+    return compte;
+}
+
+
+/* ============================================================
    GERER CONNEXION
    ============================================================ */
 
-function gererConnexion(event) {
+async function gererConnexion(event) {
 
     event.preventDefault();
 
@@ -566,20 +527,16 @@ function gererConnexion(event) {
             ? usernameInput.value.trim()
             : "";
 
-
     const password =
         passwordInput
             ? passwordInput.value
             : "";
 
 
-    if (
-        !username ||
-        !password
-    ) {
+    if (!username || !password) {
 
         afficherMessage(
-            "Veuillez entrer votre nom d'utilisateur et votre mot de passe.",
+            "⚠️ Remplissez l'identifiant et le mot de passe.",
             "error"
         );
 
@@ -587,58 +544,159 @@ function gererConnexion(event) {
     }
 
 
-    /* ========================================================
-       IGAS
-       ======================================================== */
+    try {
 
-    if (
-        normaliserTexte(username) ===
-        normaliserTexte(IGAS_USERNAME)
-        &&
-        password === IGAS_PASSWORD
-    ) {
+        afficherMessage(
+            "⏳ Connexion...",
+            "info"
+        );
 
-        const ok =
-            connexionIGAS(
-                username,
-                password
+
+        /* ====================================================
+           IGAS
+        ==================================================== */
+
+        if (
+            normaliserTexte(username) ===
+            normaliserTexte(IGAS_USERNAME)
+            &&
+            password ===
+            IGAS_PASSWORD
+        ) {
+
+            const ok =
+                connexionIGAS(
+                    username,
+                    password
+                );
+
+
+            if (!ok) {
+
+                throw new Error(
+                    "Connexion IGAS impossible."
+                );
+            }
+
+
+            afficherMessage(
+                "✅ Connexion réussie.",
+                "success"
             );
 
 
-        if (ok) {
+            setTimeout(
+                function () {
 
-            window.location.href =
-                "accueil.html";
+                    window.location.href =
+                        "accueil.html";
+
+                },
+                300
+            );
+
+            return;
         }
 
-        return;
-    }
 
+        /* ====================================================
+           AUTRES COMPTES : FIREBASE
+        ==================================================== */
 
-    /* ========================================================
-       AUTRES COMPTES
-       ======================================================== */
-
-    const ok =
-        connexionCompte(
+        await connexionFirebase(
             username,
             password
         );
 
 
-    if (!ok) {
-
         afficherMessage(
-            "Nom d'utilisateur ou mot de passe incorrect.",
-            "error"
+            "✅ Connexion réussie.",
+            "success"
         );
 
-        return;
+
+        setTimeout(
+            function () {
+
+                window.location.href =
+                    "accueil.html";
+
+            },
+            300
+        );
+
+
+    } catch (erreur) {
+
+        console.error(
+            "Erreur connexion BPR :",
+            erreur
+        );
+
+
+        let message =
+            erreur?.message ||
+            "Identifiant ou mot de passe incorrect.";
+
+
+        /* Messages Firebase plus simples */
+
+        if (
+            message.includes(
+                "auth/invalid-credential"
+            )
+        ) {
+
+            message =
+                "❌ Identifiant ou mot de passe incorrect.";
+        }
+
+        else if (
+            message.includes(
+                "auth/user-not-found"
+            )
+        ) {
+
+            message =
+                "❌ Ce compte n'existe pas dans Firebase.";
+        }
+
+        else if (
+            message.includes(
+                "auth/wrong-password"
+            )
+        ) {
+
+            message =
+                "❌ Mot de passe incorrect.";
+        }
+
+        else if (
+            message.includes(
+                "auth/invalid-email"
+            )
+        ) {
+
+            message =
+                "❌ Identifiant invalide.";
+        }
+
+        else if (
+            message.includes(
+                "auth/too-many-requests"
+            )
+        ) {
+
+            message =
+                "❌ Trop de tentatives. Réessayez plus tard.";
+        }
+
+
+        afficherMessage(
+            message,
+            "error"
+        );
     }
-
-
-    window.location.href =
-        "accueil.html";
 }
 
 
@@ -652,6 +710,7 @@ if (loginForm) {
         "submit",
         gererConnexion
     );
+
 }
 
 
@@ -665,7 +724,7 @@ function afficherSession() {
 
         const session =
             localStorage.getItem(
-                "bpr_current_user"
+                "BPR_COMPTE_CONNECTE"
             );
 
 
@@ -699,187 +758,70 @@ function afficherSession() {
 
 
 afficherSession();
-function normaliserCompte(compte) {
-
-    if (!compte) return null;
-
-    const roleTexte = String(compte.role || "").trim();
-    const roleNormalise = normaliserTexte(roleTexte);
-
-    let role = roleTexte;
-
-    if (roleNormalise === "manager national") {
-        role = "Manager National";
-    } 
-    else if (roleNormalise === "manager provincial") {
-        role = "Manager Provincial";
-    } 
-    else if (roleNormalise === "manager communal") {
-        role = "Manager Communal";
-    } 
-    else if (roleNormalise === "manager zonal") {
-        role = "Manager Zonal";
-    } 
-    else if (
-        roleNormalise === "utilisateur" ||
-        roleNormalise === "user"
-    ) {
-        role = "Utilisateur";
-    }
-
-    /*
-     * IMPORTANT :
-     * Ntitukura commune, zone na colline.
-     * Turabika territoire nyayo compte yarahawe.
-     */
-
-    return {
-        id: compte.id ?? "",
-        nom: compte.nom ?? "",
-        identifiant: compte.identifiant ?? "",
-
-        role: role,
-
-        pays: compte.pays || "BURUNDI",
-
-        province: compte.province || "",
-        commune: compte.commune || "",
-        zone: compte.zone || "",
-        colline: compte.colline || "",
-
-        statut: compte.statut || "Actif"
-    };
-}
 
 
-function connecter(compte) {
-
-    const compteConnecte =
-        normaliserCompte(compte);
-
-    if (!compteConnecte) {
-        return false;
-    }
-
-    /* SESSION */
-    localStorage.setItem(
-        "isLoggedIn",
-        "true"
-    );
-
-    localStorage.setItem(
-        "username",
-        compteConnecte.identifiant
-    );
-
-    localStorage.setItem(
-        "userName",
-        compteConnecte.nom
-    );
-
-    localStorage.setItem(
-        "userId",
-        String(compteConnecte.id)
-    );
-
-    localStorage.setItem(
-        "userRole",
-        compteConnecte.role
-    );
-
-    /* TERRITOIRE */
-    localStorage.setItem(
-        "userPays",
-        compteConnecte.pays
-    );
-
-    localStorage.setItem(
-        "userProvince",
-        compteConnecte.province
-    );
-
-    localStorage.setItem(
-        "userCommune",
-        compteConnecte.commune
-    );
-
-    localStorage.setItem(
-        "userZone",
-        compteConnecte.zone
-    );
-
-    localStorage.setItem(
-        "userColline",
-        compteConnecte.colline
-    );
-
-    /* COMPTE COMPLET */
-    localStorage.setItem(
-        "bpr_current_user",
-        JSON.stringify(compteConnecte)
-    );
-
-    localStorage.setItem(
-        "bpr_manager_connecte",
-        JSON.stringify(compteConnecte)
-    );
-
-    return true;
-}
-/* =========================================================
+/* ============================================================
    BOUTON 👁️ AFFICHER / MASQUER MOT DE PASSE
-========================================================= */
+   ============================================================ */
 
-document.addEventListener("DOMContentLoaded", function () {
+const togglePassword =
+    document.getElementById(
+        "togglePassword"
+    );
 
-    const passwordInput = document.getElementById("password");
-    const togglePassword = document.getElementById("togglePassword");
 
-    if (!passwordInput || !togglePassword) {
-        console.error("Champ password ou bouton 👁️ introuvable.");
-        return;
-    }
+if (
+    passwordInput &&
+    togglePassword
+) {
 
-    togglePassword.addEventListener("click", function () {
+    togglePassword.addEventListener(
+        "click",
+        function () {
 
-        // Mot de passe yihishe
-        if (passwordInput.type === "password") {
+            if (
+                passwordInput.type ===
+                "password"
+            ) {
 
-            passwordInput.type = "text";
+                passwordInput.type =
+                    "text";
 
-            togglePassword.textContent = "🙈";
+                togglePassword.textContent =
+                    "🙈";
 
-            togglePassword.setAttribute(
-                "aria-label",
-                "Masquer le mot de passe"
-            );
+                togglePassword.setAttribute(
+                    "aria-label",
+                    "Masquer le mot de passe"
+                );
 
-            togglePassword.setAttribute(
-                "title",
-                "Masquer le mot de passe"
-            );
+                togglePassword.setAttribute(
+                    "title",
+                    "Masquer le mot de passe"
+                );
+
+            }
+
+            else {
+
+                passwordInput.type =
+                    "password";
+
+                togglePassword.textContent =
+                    "👁️";
+
+                togglePassword.setAttribute(
+                    "aria-label",
+                    "Afficher le mot de passe"
+                );
+
+                togglePassword.setAttribute(
+                    "title",
+                    "Afficher le mot de passe"
+                );
+            }
 
         }
+    );
 
-        // Mot de passe uboneka
-        else {
-
-            passwordInput.type = "password";
-
-            togglePassword.textContent = "👁️";
-
-            togglePassword.setAttribute(
-                "aria-label",
-                "Afficher le mot de passe"
-            );
-
-            togglePassword.setAttribute(
-                "title",
-                "Afficher le mot de passe"
-            );
-
-        }
-
-    });
-
-});
+}
