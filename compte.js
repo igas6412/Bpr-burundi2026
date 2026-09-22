@@ -1,924 +1,11 @@
+
 import {
-    testerFirebase
+    creerCompte,
+    chargerComptes,
+    modifierCompte,
+    supprimerCompte,
+    compteConnecte
 } from "./bpr-firebase.js";
-
-// ============================================================
-// AFFICHER LES COMPTES FIRESTORE DANS LE TABLEAU
-// ============================================================
-
-async function afficherComptesFirestore() {
-
-    const table =
-        document.getElementById("tableUtilisateurs");
-
-    const compteur =
-        document.getElementById("countUtilisateurs");
-
-
-    if (!table) {
-        console.warn(
-            "tableUtilisateurs n'existe pas dans le HTML."
-        );
-        return;
-    }
-
-
-    try {
-
-        // Charger les comptes depuis Firebase
-        const comptes =
-            await window.BPR_FIREBASE
-                .chargerComptesFirestore();
-
-
-        // Filtrer selon le territoire du compte connecté
-        const comptesAutorises =
-            window.BPR_FIREBASE
-                .filtrerComptesParTerritoire(
-                    comptes
-                );
-
-
-        // Compteur
-        if (compteur) {
-
-            compteur.textContent =
-                comptesAutorises.length;
-
-        }
-
-
-        // Vider le tableau
-        table.innerHTML = "";
-
-
-        // Aucun compte
-        if (comptesAutorises.length === 0) {
-
-            table.innerHTML = `
-                <tr>
-                    <td colspan="10"
-                        style="text-align:center;">
-                        Aucun compte trouvé.
-                    </td>
-                </tr>
-            `;
-
-            return;
-        }
-
-
-        // Afficher chaque compte
-        comptesAutorises.forEach(
-            (compte) => {
-
-                const ligne =
-                    document.createElement("tr");
-
-
-                ligne.innerHTML = `
-
-                    <td>
-                        ${echapperHTML(
-                            compte.nomUtilisateur
-                        )}
-                    </td>
-
-                    <td>
-                        ${echapperHTML(
-                            compte.identifiant
-                        )}
-                    </td>
-
-                    <td>
-                        ${echapperHTML(
-                            compte.role
-                        )}
-                    </td>
-
-                    <td>
-                        ${echapperHTML(
-                            compte.province
-                        )}
-                    </td>
-
-                    <td>
-                        ${echapperHTML(
-                            compte.commune
-                        )}
-                    </td>
-
-                    <td>
-                        ${echapperHTML(
-                            compte.zone
-                        )}
-                    </td>
-
-                    <td>
-                        ${echapperHTML(
-                            compte.colline
-                        )}
-                    </td>
-
-                    <td>
-                        ${echapperHTML(
-                            compte.creePar
-                        )}
-                    </td>
-
-                    <td>
-                        <button
-                            type="button"
-                            class="btn-voir"
-                            onclick="voirCompte('${compte.id}')">
-                            👁 Voir
-                        </button>
-
-                        <button
-                            type="button"
-                            class="btn-modifier"
-                            onclick="modifierCompte('${compte.id}')">
-                            ✏️ Modifier
-                        </button>
-
-                        <button
-                            type="button"
-                            class="btn-supprimer"
-                            onclick="supprimerCompte('${compte.id}')">
-                            🗑 Supprimer
-                        </button>
-                    </td>
-
-                `;
-
-
-                table.appendChild(ligne);
-
-            }
-        );
-
-
-    } catch (erreur) {
-
-        console.error(
-            "Erreur affichage comptes :",
-            erreur
-        );
-
-        table.innerHTML = `
-            <tr>
-                <td colspan="10"
-                    style="text-align:center;">
-                    Erreur lors du chargement des comptes.
-                </td>
-            </tr>
-        `;
-
-    }
-
-}
-
-
-// ============================================================
-// PROTECTION CONTRE HTML
-// ============================================================
-
-function echapperHTML(valeur) {
-
-    return String(valeur || "")
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
-
-}
-
-
-// ============================================================
-// VOIR UN COMPTE
-// ============================================================
-
-async function voirCompte(id) {
-
-    try {
-
-        const comptes =
-            await window.BPR_FIREBASE
-                .chargerComptesFirestore();
-
-
-        const compte =
-            comptes.find(
-                c => c.id === id
-            );
-
-
-        if (!compte) {
-
-            alert(
-                "Compte introuvable."
-            );
-
-            return;
-        }
-
-
-        alert(
-`INFORMATIONS DU COMPTE
-
-Nom : ${compte.nomUtilisateur || ""}
-
-Identifiant : ${compte.identifiant || ""}
-
-Rôle : ${compte.role || ""}
-
-Statut : ${compte.statut || ""}
-
-Province : ${compte.province || ""}
-
-Commune : ${compte.commune || ""}
-
-Zone : ${compte.zone || ""}
-
-Colline : ${compte.colline || ""}
-
-Créé par : ${compte.creePar || ""}`
-        );
-
-
-    } catch (erreur) {
-
-        console.error(
-            erreur
-        );
-
-        alert(
-            "Impossible d'afficher le compte."
-        );
-
-    }
-
-}
-
-
-// ============================================================
-// SUPPRIMER UN COMPTE
-// ============================================================
-
-async function supprimerCompte(id) {
-
-    const confirmation =
-        confirm(
-            "Voulez-vous vraiment supprimer ce compte ?"
-        );
-
-
-    if (!confirmation) {
-        return;
-    }
-
-
-    try {
-
-        const comptes =
-            await window.BPR_FIREBASE
-                .chargerComptesFirestore();
-
-
-        const compte =
-            comptes.find(
-                c => c.id === id
-            );
-
-
-        if (!compte) {
-
-            alert(
-                "Compte introuvable."
-            );
-
-            return;
-        }
-
-
-        // Vérifier le territoire
-        if (
-            !window.BPR_FIREBASE
-                .compteDansTerritoire(
-                    obtenirCompteConnecte(),
-                    compte
-                )
-        ) {
-
-            alert(
-                "Vous n'êtes pas autorisé à supprimer ce compte."
-            );
-
-            return;
-        }
-
-
-        const resultat =
-            await window.BPR_FIREBASE
-                .supprimerCompteFirestore(
-                    id
-                );
-
-
-        if (resultat) {
-
-            alert(
-                "Compte supprimé avec succès."
-            );
-
-
-            await afficherComptesFirestore();
-
-        }
-
-
-    } catch (erreur) {
-
-        console.error(
-            erreur
-        );
-
-        alert(
-            "Erreur lors de la suppression."
-        );
-
-    }
-
-}
-
-
-// ============================================================
-// CHARGER AUTOMATIQUEMENT LA LISTE
-// ============================================================
-
-document.addEventListener(
-    "DOMContentLoaded",
-    function () {
-
-        afficherComptesFirestore();
-
-    }
-);
-        
-// ============================================================
-// BURUNDI PEOPLE REGISTRY
-// COMPTE.JS + FIRESTORE
-// ============================================================
-
-// Firebase Firestore
-import { db } from "./firebase-config.js";
-
-import {
-    collection,
-    addDoc,
-    getDocs,
-    doc,
-    updateDoc,
-    deleteDoc,
-    serverTimestamp
-} from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
-
-
-// ============================================================
-// COLLECTION FIRESTORE
-// ============================================================
-
-const COMPTES_COLLECTION = "comptes";
-
-
-// ============================================================
-// VARIABLES
-// ============================================================
-
-let compteEnModification = null;
-
-
-// ============================================================
-// OBTENIR LE COMPTE CONNECTÉ
-// ============================================================
-
-function obtenirCompteConnecte() {
-
-    const sources = [
-        "BPR_COMPTE_CONNECTE",
-        "BPR_USER",
-        "currentUser",
-        "utilisateurConnecte"
-    ];
-
-    for (const cle of sources) {
-
-        const valeur = localStorage.getItem(cle);
-
-        if (!valeur) continue;
-
-        try {
-
-            const compte = JSON.parse(valeur);
-
-            if (compte && typeof compte === "object") {
-                return compte;
-            }
-
-        } catch (erreur) {
-
-            console.warn(
-                "Impossible de lire le compte :",
-                cle
-            );
-
-        }
-    }
-
-    // Compte prototype si aucun compte n'est encore connecté
-    return {
-        nomUtilisateur: "Administrateur National",
-        identifiant: "admin-national",
-        role: "Manager National",
-        province: "",
-        commune: "",
-        zone: "",
-        colline: ""
-    };
-}
-
-
-// ============================================================
-// COMPTE CONNECTÉ
-// ============================================================
-
-const compteConnecte = obtenirCompteConnecte();
-
-
-// ============================================================
-// NIVEAU DES RÔLES
-// ============================================================
-
-const NIVEAU_ROLE = {
-
-    "Utilisateur": 1,
-
-    "Manager Zonal": 2,
-
-    "Manager Communal": 3,
-
-    "Manager Provincial": 4,
-
-    "Manager National": 5
-
-};
-
-
-// ============================================================
-// NORMALISER UNE VALEUR
-// ============================================================
-
-function normaliser(valeur) {
-
-    return String(valeur || "")
-        .trim()
-        .toLowerCase();
-
-}
-
-
-// ============================================================
-// OBTENIR LE NIVEAU DU RÔLE
-// ============================================================
-
-function niveauRole(role) {
-
-    return NIVEAU_ROLE[role] || 0;
-
-}
-
-
-// ============================================================
-// VÉRIFIER SI UN TERRITOIRE APPARTIENT AU COMPTE
-// ============================================================
-
-function compteDansTerritoire(compte, donnees) {
-
-    if (!compte || !donnees) {
-        return false;
-    }
-
-
-    // Manager National
-    if (compte.role === "Manager National") {
-        return true;
-    }
-
-
-    // Province
-    if (
-        compte.province &&
-        donnees.province &&
-        normaliser(compte.province) !==
-        normaliser(donnees.province)
-    ) {
-        return false;
-    }
-
-
-    // Commune
-    if (
-        niveauRole(compte.role) >= 3 &&
-        compte.commune &&
-        donnees.commune &&
-        normaliser(compte.commune) !==
-        normaliser(donnees.commune)
-    ) {
-        return false;
-    }
-
-
-    // Zone
-    if (
-        niveauRole(compte.role) >= 2 &&
-        compte.zone &&
-        donnees.zone &&
-        normaliser(compte.zone) !==
-        normaliser(donnees.zone)
-    ) {
-        return false;
-    }
-
-
-    // Colline
-    if (
-        compte.role === "Utilisateur" &&
-        compte.colline &&
-        donnees.colline &&
-        normaliser(compte.colline) !==
-        normaliser(donnees.colline)
-    ) {
-        return false;
-    }
-
-
-    return true;
-}
-
-
-// ============================================================
-// VÉRIFIER SI LE COMPTE PEUT CRÉER UN AUTRE RÔLE
-// ============================================================
-
-function peutCreerRole(roleACreer) {
-
-    const niveauConnecte =
-        niveauRole(compteConnecte.role);
-
-    const niveauNouveau =
-        niveauRole(roleACreer);
-
-
-    if (!niveauConnecte || !niveauNouveau) {
-        return false;
-    }
-
-
-    // Manager National peut créer tous les comptes
-    if (
-        compteConnecte.role ===
-        "Manager National"
-    ) {
-        return true;
-    }
-
-
-    // Un manager ne crée pas un rôle supérieur
-    return niveauNouveau < niveauConnecte;
-}
-
-
-// ============================================================
-// VÉRIFIER LE TERRITOIRE AVANT CRÉATION
-// ============================================================
-
-function territoireAutorise(donnees) {
-
-    if (
-        compteConnecte.role ===
-        "Manager National"
-    ) {
-        return true;
-    }
-
-
-    return compteDansTerritoire(
-        compteConnecte,
-        donnees
-    );
-}
-
-
-// ============================================================
-// CRÉER UN COMPTE FIRESTORE
-// ============================================================
-
-async function creerCompteFirestore(donnees) {
-
-    try {
-
-        const compte = {
-
-            nomUtilisateur:
-                donnees.nomUtilisateur || "",
-
-            identifiant:
-                donnees.identifiant || "",
-
-            role:
-                donnees.role || "",
-
-            statut:
-                donnees.statut || "Actif",
-
-            province:
-                donnees.province || "",
-
-            commune:
-                donnees.commune || "",
-
-            zone:
-                donnees.zone || "",
-
-            colline:
-                donnees.colline || "",
-
-            creePar:
-                compteConnecte.nomUtilisateur ||
-                compteConnecte.identifiant ||
-                "Administrateur National",
-
-            creeParRole:
-                compteConnecte.role ||
-                "Manager National",
-
-            creeParIdentifiant:
-                compteConnecte.identifiant ||
-                "admin-national",
-
-            creeLe:
-                serverTimestamp()
-
-        };
-
-
-        const reference =
-            await addDoc(
-                collection(
-                    db,
-                    COMPTES_COLLECTION
-                ),
-                compte
-            );
-
-
-        console.log(
-            "Compte créé avec succès :",
-            reference.id
-        );
-
-
-        return reference.id;
-
-    } catch (erreur) {
-
-        console.error(
-            "Erreur création compte :",
-            erreur
-        );
-
-        throw erreur;
-    }
-}
-
-
-// ============================================================
-// LIRE TOUS LES COMPTES FIRESTORE
-// ============================================================
-
-async function chargerComptesFirestore() {
-
-    try {
-
-        const snapshot =
-            await getDocs(
-                collection(
-                    db,
-                    COMPTES_COLLECTION
-                )
-            );
-
-
-        const comptes = [];
-
-
-        snapshot.forEach((document) => {
-
-            comptes.push({
-
-                id: document.id,
-
-                ...document.data()
-
-            });
-
-        });
-
-
-        return comptes;
-
-    } catch (erreur) {
-
-        console.error(
-            "Erreur chargement comptes :",
-            erreur
-        );
-
-        return [];
-    }
-}
-
-
-// ============================================================
-// FILTRER LES COMPTES SELON LE TERRITOIRE
-// ============================================================
-
-function filtrerComptesParTerritoire(
-    comptes
-) {
-
-    return comptes.filter(
-        (compte) => {
-
-            return compteDansTerritoire(
-                compteConnecte,
-                compte
-            );
-
-        }
-    );
-
-}
-
-
-// ============================================================
-// MODIFIER UN COMPTE
-// ============================================================
-
-async function modifierCompteFirestore(
-    id,
-    nouvellesDonnees
-) {
-
-    try {
-
-        const reference =
-            doc(
-                db,
-                COMPTES_COLLECTION,
-                id
-            );
-
-
-        await updateDoc(
-            reference,
-            {
-
-                nomUtilisateur:
-                    nouvellesDonnees.nomUtilisateur || "",
-
-                identifiant:
-                    nouvellesDonnees.identifiant || "",
-
-                role:
-                    nouvellesDonnees.role || "",
-
-                statut:
-                    nouvellesDonnees.statut || "Actif",
-
-                province:
-                    nouvellesDonnees.province || "",
-
-                commune:
-                    nouvellesDonnees.commune || "",
-
-                zone:
-                    nouvellesDonnees.zone || "",
-
-                colline:
-                    nouvellesDonnees.colline || "",
-
-                modifieLe:
-                    serverTimestamp(),
-
-                modifiePar:
-                    compteConnecte.nomUtilisateur ||
-                    compteConnecte.identifiant ||
-                    "Administrateur National"
-
-            }
-        );
-
-
-        console.log(
-            "Compte modifié :",
-            id
-        );
-
-
-        return true;
-
-    } catch (erreur) {
-
-        console.error(
-            "Erreur modification compte :",
-            erreur
-        );
-
-        return false;
-    }
-
-}
-
-
-// ============================================================
-// SUPPRIMER UN COMPTE
-// ============================================================
-
-async function supprimerCompteFirestore(id) {
-
-    try {
-
-        await deleteDoc(
-            doc(
-                db,
-                COMPTES_COLLECTION,
-                id
-            )
-        );
-
-
-        console.log(
-            "Compte supprimé :",
-            id
-        );
-
-
-        return true;
-
-    } catch (erreur) {
-
-        console.error(
-            "Erreur suppression compte :",
-            erreur
-        );
-
-        return false;
-    }
-
-}
-
-
-// ============================================================
-// EXPORTER LES FONCTIONS
-// ============================================================
-
-window.BPR_FIREBASE = {
-
-    creerCompteFirestore,
-
-    chargerComptesFirestore,
-
-    filtrerComptesParTerritoire,
-
-    modifierCompteFirestore,
-
-    supprimerCompteFirestore,
-
-    obtenirCompteConnecte,
-
-    compteDansTerritoire,
-
-    peutCreerRole,
-
-    territoireAutorise
-
-};
-
-
-
-
 
 // ======================================================
 
@@ -2927,7 +2014,7 @@ const BUHUMUZA = {
             "Gakonk(o)",
 
             "Kivumu",
-
+            
             "Mpungwe",
 
             "Mugege",
@@ -10777,43 +9864,77 @@ if (zoneUtilisateur) {
 
 
 
+
 // ======================================================
-// 9. GESTION DES COMPTES
+// 9. GESTION DES COMPTES AVEC FIREBASE
 // ======================================================
 
-const UTILISATEURS_KEY = "bpr_utilisateurs";
+const formCreerUtilisateur =
+    document.getElementById("formCreerUtilisateur");
 
-let utilisateurs = JSON.parse(
-    localStorage.getItem(UTILISATEURS_KEY) || "[]"
-);
+const nomUtilisateur =
+    document.getElementById("nomUtilisateur");
 
-let utilisateurEnModification = null;
+const identifiantUtilisateur =
+    document.getElementById("identifiantUtilisateur");
 
-const formCreerUtilisateur = document.getElementById("formCreerUtilisateur");
-const nomUtilisateur = document.getElementById("nomUtilisateur");
-const identifiantUtilisateur = document.getElementById("identifiantUtilisateur");
-const motDePasseUtilisateur = document.getElementById("motDePasseUtilisateur");
-const confirmationMotDePasse = document.getElementById("confirmationMotDePasse");
-const roleUtilisateur = document.getElementById("roleUtilisateur");
-const paysUtilisateur = document.getElementById("paysUtilisateur");
-const statutUtilisateur = document.getElementById("statutUtilisateur");
-const tableUtilisateurs = document.getElementById("tableUtilisateurs");
-const countUtilisateurs = document.getElementById("countUtilisateurs");
-const messageUtilisateur = document.getElementById("messageUtilisateur");
-const btnCreerUtilisateur = document.getElementById("btnCreerUtilisateur");
-const btnAnnulerModification = document.getElementById("btnAnnulerModification");
+const motDePasseUtilisateur =
+    document.getElementById("motDePasseUtilisateur");
+
+const confirmationMotDePasse =
+    document.getElementById("confirmationMotDePasse");
+
+const roleUtilisateur =
+    document.getElementById("roleUtilisateur");
+
+const paysUtilisateur =
+    document.getElementById("paysUtilisateur");
+
+const statutUtilisateur =
+    document.getElementById("statutUtilisateur");
+
+const tableUtilisateurs =
+    document.getElementById("tableUtilisateurs");
+
+const countUtilisateurs =
+    document.getElementById("countUtilisateurs");
+
+const messageUtilisateur =
+    document.getElementById("messageUtilisateur");
+
+const btnCreerUtilisateur =
+    document.getElementById("btnCreerUtilisateur");
+
+const btnAnnulerModification =
+    document.getElementById("btnAnnulerModification");
 
 
-function sauvegarderUtilisateurs() {
-    localStorage.setItem(
-        UTILISATEURS_KEY,
-        JSON.stringify(utilisateurs)
-    );
+const BPR_ROLES = {
+    "Utilisateur": 1,
+    "Manager Zonal": 2,
+    "Manager Communal": 3,
+    "Manager Provincial": 4,
+    "Manager National": 5
+};
+
+
+// ======================================================
+// OUTILS
+// ======================================================
+
+function afficherMessageCompte(message, type = "info") {
+
+    if (!messageUtilisateur) return;
+
+    messageUtilisateur.textContent = message;
+    messageUtilisateur.className =
+        "message-utilisateur " + type;
 }
 
 
-function echapperHTML(texte) {
-    return String(texte ?? "")
+function echapperCompte(valeur) {
+
+    return String(valeur ?? "")
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;")
@@ -10822,23 +9943,33 @@ function echapperHTML(texte) {
 }
 
 
-function afficherNombreComptes() {
-    if (countUtilisateurs) {
-        countUtilisateurs.textContent = utilisateurs.length;
+function messageErreurFirebase(erreur) {
+
+    const code = erreur?.code || "";
+
+    if (code === "auth/email-already-in-use") {
+        return "❌ Cet identifiant existe déjà.";
     }
-}
 
+    if (code === "auth/weak-password") {
+        return "❌ Le mot de passe doit contenir au moins 6 caractères.";
+    }
 
-function afficherMessage(message, type = "info") {
-    if (!messageUtilisateur) return;
+    if (code === "auth/invalid-email") {
+        return "❌ Identifiant invalide.";
+    }
 
-    messageUtilisateur.textContent = message;
-    messageUtilisateur.className = "message-utilisateur " + type;
+    if (code === "permission-denied") {
+        return "❌ Accès refusé par les règles Firebase.";
+    }
+
+    return erreur?.message ||
+        "❌ Une erreur est survenue.";
 }
 
 
 // ======================================================
-// CHAMPS SELON LE TYPE DE COMPTE
+// CHAMPS SELON LE RÔLE DU NOUVEAU COMPTE
 // ======================================================
 
 function gererChampsSelonRole() {
@@ -10849,7 +9980,9 @@ function gererChampsSelonRole() {
         !communeUtilisateur ||
         !zoneUtilisateur ||
         !collineUtilisateur
-    ) return;
+    ) {
+        return;
+    }
 
     const role = roleUtilisateur.value;
 
@@ -10858,13 +9991,15 @@ function gererChampsSelonRole() {
     zoneUtilisateur.disabled = true;
     collineUtilisateur.disabled = true;
 
-    // Le pays est réservé au Manager National.
     if (paysUtilisateur) {
         paysUtilisateur.disabled = true;
         paysUtilisateur.value = "BURUNDI";
     }
 
+
+    // Manager National : aucun territoire à choisir.
     if (role === "Manager National") {
+
         if (paysUtilisateur) {
             paysUtilisateur.disabled = false;
             paysUtilisateur.value = "BURUNDI";
@@ -10874,34 +10009,50 @@ function gererChampsSelonRole() {
         communeUtilisateur.value = "";
         zoneUtilisateur.value = "";
         collineUtilisateur.value = "";
+
         return;
     }
 
+
+    // Manager Provincial : province obligatoire.
     if (role === "Manager Provincial") {
+
         provinceUtilisateur.disabled = false;
         communeUtilisateur.value = "";
         zoneUtilisateur.value = "";
         collineUtilisateur.value = "";
+
         return;
     }
 
+
+    // Manager Communal : province + commune.
     if (role === "Manager Communal") {
+
         provinceUtilisateur.disabled = false;
         communeUtilisateur.disabled = false;
         zoneUtilisateur.value = "";
         collineUtilisateur.value = "";
+
         return;
     }
 
+
+    // Manager Zonal : province + commune + zone.
     if (role === "Manager Zonal") {
+
         provinceUtilisateur.disabled = false;
         communeUtilisateur.disabled = false;
         zoneUtilisateur.disabled = false;
         collineUtilisateur.value = "";
+
         return;
     }
 
+
+    // Utilisateur : territoire complet jusqu'à la colline.
     if (role === "Utilisateur") {
+
         provinceUtilisateur.disabled = false;
         communeUtilisateur.disabled = false;
         zoneUtilisateur.disabled = false;
@@ -10911,22 +10062,41 @@ function gererChampsSelonRole() {
 
 
 // ======================================================
-// TERRITOIRE SELON LE ROLE
+// TERRITOIRE DU NOUVEAU COMPTE
 // ======================================================
 
 function obtenirTerritoireCompte() {
 
-    const role = roleUtilisateur ? roleUtilisateur.value : "";
+    const role =
+        roleUtilisateur?.value || "";
 
     const territoire = {
-        pays: paysUtilisateur ? paysUtilisateur.value : "BURUNDI",
-        province: provinceUtilisateur ? provinceUtilisateur.value : "",
-        commune: communeUtilisateur ? communeUtilisateur.value : "",
-        zone: zoneUtilisateur ? zoneUtilisateur.value : "",
-        colline: collineUtilisateur ? collineUtilisateur.value : ""
+
+        pays:
+            paysUtilisateur?.value ||
+            "BURUNDI",
+
+        province:
+            provinceUtilisateur?.value ||
+            "",
+
+        commune:
+            communeUtilisateur?.value ||
+            "",
+
+        zone:
+            zoneUtilisateur?.value ||
+            "",
+
+        colline:
+            collineUtilisateur?.value ||
+            ""
+
     };
 
+
     if (role === "Manager National") {
+
         territoire.pays = "BURUNDI";
         territoire.province = "";
         territoire.commune = "";
@@ -10934,20 +10104,27 @@ function obtenirTerritoireCompte() {
         territoire.colline = "";
     }
 
+
     if (role === "Manager Provincial") {
+
         territoire.commune = "";
         territoire.zone = "";
         territoire.colline = "";
     }
 
+
     if (role === "Manager Communal") {
+
         territoire.zone = "";
         territoire.colline = "";
     }
 
+
     if (role === "Manager Zonal") {
+
         territoire.colline = "";
     }
+
 
     return territoire;
 }
@@ -10955,101 +10132,703 @@ function obtenirTerritoireCompte() {
 
 function verifierTerritoire() {
 
-    const role = roleUtilisateur ? roleUtilisateur.value : "";
-    const territoire = obtenirTerritoireCompte();
+    const role =
+        roleUtilisateur?.value || "";
+
+    const territoire =
+        obtenirTerritoireCompte();
+
 
     if (!role) {
-        return "Veuillez sÃ©lectionner le type de compte.";
+        return "Veuillez sélectionner le type de compte.";
     }
+
 
     if (role === "Manager National") {
         return "";
     }
 
+
     if (!territoire.province) {
-        return "Veuillez sÃ©lectionner une province.";
+        return "Veuillez sélectionner une province.";
     }
 
+
     if (
-        (role === "Manager Communal" ||
-         role === "Manager Zonal" ||
-         role === "Utilisateur") &&
+        (
+            role === "Manager Communal" ||
+            role === "Manager Zonal" ||
+            role === "Utilisateur"
+        ) &&
         !territoire.commune
     ) {
-        return "Veuillez sÃ©lectionner une commune.";
+        return "Veuillez sélectionner une commune.";
     }
+
 
     if (
-        (role === "Manager Zonal" || role === "Utilisateur") &&
+        (
+            role === "Manager Zonal" ||
+            role === "Utilisateur"
+        ) &&
         !territoire.zone
     ) {
-        return "Veuillez sÃ©lectionner une zone.";
+        return "Veuillez sélectionner une zone.";
     }
 
-    if (role === "Utilisateur" && !territoire.colline) {
-        return "Veuillez sÃ©lectionner une colline / quartier.";
+
+    if (
+        role === "Utilisateur" &&
+        !territoire.colline
+    ) {
+        return "Veuillez sélectionner une colline / quartier.";
     }
+
 
     return "";
 }
 
 
 // ======================================================
-// AFFICHER LA LISTE DES COMPTES
+// COMPTE CONNECTÉ
 // ======================================================
 
-function afficherUtilisateurs() {
+function normaliserRoleBPR(role) {
+    return String(role || "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .trim()
+        .replace(/\s+/g, " ")
+        .toLowerCase();
+}
 
-    if (!tableUtilisateurs) {
-        afficherNombreComptes();
+function roleCanoniqueBPR(role) {
+    const r = normaliserRoleBPR(role);
+
+    const roles = {
+        "utilisateur": "Utilisateur",
+        "manager zonal": "Manager Zonal",
+        "manager communal": "Manager Communal",
+        "manager provincial": "Manager Provincial",
+        "manager national": "Manager National"
+    };
+
+    return roles[r] || "";
+}
+
+function lireSessionLocaleBPR() {
+    const cles = [
+        "BPR_COMPTE_CONNECTE",
+        "bpr_current_user",
+        "bpr_manager_connecte"
+    ];
+
+    for (const cle of cles) {
+        try {
+            const valeur = localStorage.getItem(cle);
+            if (!valeur) continue;
+
+            const objet = JSON.parse(valeur);
+            if (objet && typeof objet === "object") {
+                return objet;
+            }
+        } catch (erreur) {
+            console.warn("Session locale invalide :", erreur);
+        }
+    }
+
+    return null;
+}
+
+async function obtenirCompteCreateur() {
+    let compte = null;
+
+    // Firebase est prioritaire.
+    try {
+        compte = await compteConnecte();
+    } catch (erreur) {
+        console.warn("Session Firebase :", erreur);
+    }
+
+    // Fallback local si Firebase n'est pas encore prêt.
+    if (!compte) {
+        compte = lireSessionLocaleBPR();
+    }
+
+    if (!compte) {
+        return null;
+    }
+
+    const role = roleCanoniqueBPR(
+        compte.role ||
+        compte.roleUtilisateur ||
+        compte.userRole ||
+        localStorage.getItem("userRole") ||
+        ""
+    );
+
+    if (!role) {
+        console.error("Rôle BPR introuvable dans le compte connecté.", compte);
+        return null;
+    }
+
+    compte.role = role;
+
+    // Garantit les territoires même pour une ancienne session.
+    compte.pays = compte.pays || localStorage.getItem("userPays") || "BURUNDI";
+    compte.province = compte.province || localStorage.getItem("userProvince") || "";
+    compte.commune = compte.commune || localStorage.getItem("userCommune") || "";
+    compte.zone = compte.zone || localStorage.getItem("userZone") || "";
+    compte.colline = compte.colline || localStorage.getItem("userColline") || "";
+
+    localStorage.setItem(
+        "BPR_COMPTE_CONNECTE",
+        JSON.stringify(compte)
+    );
+
+    return compte;
+}
+
+// ======================================================
+// AUTORISATION DE CRÉER UN RÔLE
+// ======================================================
+
+function peutCreerRole(
+    roleCreateur,
+    roleNouveau
+) {
+    const createur = roleCanoniqueBPR(roleCreateur);
+    const nouveau = roleCanoniqueBPR(roleNouveau);
+
+    // Le Manager National peut créer TOUS les types de comptes.
+    if (createur === "Manager National") {
+        return [
+            "Utilisateur",
+            "Manager Zonal",
+            "Manager Communal",
+            "Manager Provincial",
+            "Manager National"
+        ].includes(nouveau);
+    }
+
+    const niveauCreateur = BPR_ROLES[createur] || 0;
+    const niveauNouveau = BPR_ROLES[nouveau] || 0;
+
+    if (!niveauCreateur || !niveauNouveau) {
+        return false;
+    }
+
+    return niveauNouveau < niveauCreateur;
+}
+
+
+// ======================================================
+// AUTORISATION TERRITORIALE
+// ======================================================
+
+function territoireAutorise(
+    donnees,
+    createur
+) {
+    if (!createur) {
+        return false;
+    }
+
+    const role = roleCanoniqueBPR(
+        createur.role ||
+        createur.roleUtilisateur ||
+        createur.userRole
+    );
+
+    // MANAGER NATIONAL : accès à tout le Burundi.
+    if (role === "Manager National") {
+        return true;
+    }
+
+    const provinceCreateur = String(createur.province || "").trim();
+    const communeCreateur = String(createur.commune || "").trim();
+    const zoneCreateur = String(createur.zone || "").trim();
+
+    const province = String(donnees.province || "").trim();
+    const commune = String(donnees.commune || "").trim();
+    const zone = String(donnees.zone || "").trim();
+
+    if (role === "Manager Provincial") {
+        return province === provinceCreateur;
+    }
+
+    if (role === "Manager Communal") {
+        return (
+            province === provinceCreateur &&
+            commune === communeCreateur
+        );
+    }
+
+    if (role === "Manager Zonal") {
+        return (
+            province === provinceCreateur &&
+            commune === communeCreateur &&
+            zone === zoneCreateur
+        );
+    }
+
+    return false;
+}
+
+
+// ======================================================
+// CRÉER LE COMPTE
+// ======================================================
+
+async function creerUtilisateurFirebase() {
+
+    const message =
+        messageUtilisateur;
+
+    const bouton =
+        btnCreerUtilisateur;
+
+
+    const donnees = {
+
+        nomUtilisateur:
+            nomUtilisateur?.value.trim() || "",
+
+        identifiant:
+            identifiantUtilisateur?.value.trim() || "",
+
+        motDePasse:
+            motDePasseUtilisateur?.value || "",
+
+        confirmation:
+            confirmationMotDePasse?.value || "",
+
+        role:
+            roleUtilisateur?.value || "",
+
+        statut:
+            statutUtilisateur?.value ||
+            "Actif",
+
+        ...obtenirTerritoireCompte()
+
+    };
+
+
+    if (
+        !donnees.nomUtilisateur ||
+        !donnees.identifiant ||
+        !donnees.motDePasse ||
+        !donnees.confirmation ||
+        !donnees.role
+    ) {
+
+        afficherMessageCompte(
+            "⚠️ Veuillez remplir tous les champs obligatoires.",
+            "erreur"
+        );
+
         return;
     }
 
-    tableUtilisateurs.innerHTML = "";
 
-    if (utilisateurs.length === 0) {
-        tableUtilisateurs.innerHTML = `
-            <tr>
-                <td colspan="10" style="text-align:center;">
-                    Aucun compte enregistrÃ©
+    if (
+        donnees.motDePasse.length < 6
+    ) {
+
+        afficherMessageCompte(
+            "❌ Le mot de passe doit contenir au moins 6 caractères.",
+            "erreur"
+        );
+
+        return;
+    }
+
+
+    if (
+        donnees.motDePasse !==
+        donnees.confirmation
+    ) {
+
+        afficherMessageCompte(
+            "❌ Les mots de passe ne correspondent pas.",
+            "erreur"
+        );
+
+        return;
+    }
+
+
+    const erreurTerritoire =
+        verifierTerritoire();
+
+
+    if (erreurTerritoire) {
+
+        afficherMessageCompte(
+            "❌ " + erreurTerritoire,
+            "erreur"
+        );
+
+        return;
+    }
+
+
+    if (bouton) {
+
+        bouton.disabled = true;
+        bouton.textContent =
+            "⏳ Création...";
+
+    }
+
+
+    try {
+
+        const createur =
+            await obtenirCompteCreateur();
+
+
+        if (!createur) {
+
+            throw new Error(
+                "Aucun compte BPR connecté. Connectez-vous d'abord."
+            );
+        }
+
+
+        const roleCreateur =
+            roleCanoniqueBPR(createur.role);
+
+        const roleNouveau =
+            roleCanoniqueBPR(donnees.role);
+
+        if (!roleCreateur) {
+            throw new Error(
+                "Le rôle du compte connecté est introuvable."
+            );
+        }
+
+        if (!roleNouveau) {
+            throw new Error(
+                "Le rôle du nouveau compte est invalide."
+            );
+        }
+
+        if (
+            !peutCreerRole(
+                roleCreateur,
+                roleNouveau
+            )
+        ) {
+            throw new Error(
+                "Vous n'avez pas l'autorisation de créer ce type de compte."
+            );
+        }
+
+
+        if (
+            !territoireAutorise(
+                donnees,
+                createur
+            )
+        ) {
+
+            throw new Error(
+                "Ce territoire n'est pas autorisé pour votre compte."
+            );
+        }
+
+
+        const resultat =
+            await creerCompte({
+
+                nomUtilisateur:
+                    donnees.nomUtilisateur,
+
+                identifiant:
+                    donnees.identifiant,
+
+                motDePasse:
+                    donnees.motDePasse,
+
+                role:
+                    donnees.role,
+
+                statut:
+                    donnees.statut,
+
+                province:
+                    donnees.province,
+
+                commune:
+                    donnees.commune,
+
+                zone:
+                    donnees.zone,
+
+                colline:
+                    donnees.colline,
+
+                creeParUid:
+                    createur.uid || "",
+
+                creePar:
+                    createur.nomUtilisateur ||
+                    createur.nom ||
+                    createur.identifiant ||
+                    "Administrateur",
+
+                creeParRole:
+                    createur.role || ""
+
+            });
+
+
+        if (!resultat?.success) {
+
+            throw new Error(
+                "La création du compte a échoué."
+            );
+        }
+
+
+        afficherMessageCompte(
+            "✅ Compte créé avec succès.",
+            "succes"
+        );
+
+
+        if (formCreerUtilisateur) {
+            formCreerUtilisateur.reset();
+        }
+
+
+        gererChampsSelonRole();
+
+
+        await afficherComptesFirebase();
+
+
+    } catch (erreur) {
+
+        console.error(
+            "Erreur création compte :",
+            erreur
+        );
+
+
+        afficherMessageCompte(
+            messageErreurFirebase(erreur),
+            "erreur"
+        );
+
+    } finally {
+
+        if (bouton) {
+
+            bouton.disabled = false;
+
+            bouton.textContent =
+                "Créer le compte";
+
+        }
+
+    }
+}
+
+
+// ======================================================
+// AFFICHER LES COMPTES FIREBASE
+// ======================================================
+
+async function afficherComptesFirebase() {
+
+    try {
+
+        const comptes =
+            await chargerComptes();
+
+
+        const element =
+            document.getElementById(
+                "tableUtilisateurs"
+            );
+
+
+        if (!element) {
+            return;
+        }
+
+
+        let tbody;
+
+
+        if (
+            element.tagName &&
+            element.tagName.toLowerCase() ===
+            "table"
+        ) {
+
+            tbody =
+                element.querySelector("tbody");
+
+
+            if (!tbody) {
+
+                tbody =
+                    document.createElement("tbody");
+
+                element.appendChild(tbody);
+            }
+
+        } else {
+
+            // Si tableUtilisateurs est déjà un <tbody>.
+            tbody = element;
+        }
+
+
+        tbody.innerHTML = "";
+
+
+        if (countUtilisateurs) {
+
+            countUtilisateurs.textContent =
+                comptes.length;
+
+        }
+
+
+        if (!comptes.length) {
+
+            const ligne =
+                document.createElement("tr");
+
+            ligne.innerHTML = `
+                <td colspan="10"
+                    style="text-align:center;">
+                    Aucun compte enregistré.
                 </td>
-            </tr>
-        `;
+            `;
 
-        afficherNombreComptes();
-        return;
+            tbody.appendChild(ligne);
+
+            return;
+        }
+
+
+        comptes.forEach(compte => {
+
+            const ligne =
+                document.createElement("tr");
+
+
+            const id =
+                echapperCompte(compte.id);
+
+
+            ligne.innerHTML = `
+
+                <td>
+                    ${echapperCompte(
+                        compte.nomUtilisateur
+                    )}
+                </td>
+
+                <td>
+                    ${echapperCompte(
+                        compte.identifiant
+                    )}
+                </td>
+
+                <td>
+                    ${echapperCompte(
+                        compte.role
+                    )}
+                </td>
+
+                <td>
+                    ${echapperCompte(
+                        compte.province || "-"
+                    )}
+                </td>
+
+                <td>
+                    ${echapperCompte(
+                        compte.commune || "-"
+                    )}
+                </td>
+
+                <td>
+                    ${echapperCompte(
+                        compte.zone || "-"
+                    )}
+                </td>
+
+                <td>
+                    ${echapperCompte(
+                        compte.colline || "-"
+                    )}
+                </td>
+
+                <td>
+                    ${echapperCompte(
+                        compte.statut || "Actif"
+                    )}
+                </td>
+
+                <td>
+                    ${echapperCompte(
+                        compte.creePar || "-"
+                    )}
+                </td>
+
+                <td class="actions">
+
+                    <button
+                        type="button"
+                        class="btn-voir"
+                        onclick="bprVoirCompte('${id}')">
+                        👁️ Voir
+                    </button>
+
+                    <button
+                        type="button"
+                        class="btn-modifier"
+                        onclick="bprModifierCompte('${id}')">
+                        ✏️ Modifier
+                    </button>
+
+                    <button
+                        type="button"
+                        class="btn-supprimer"
+                        onclick="bprSupprimerCompte('${id}')">
+                        🗑️ Supprimer
+                    </button>
+
+                </td>
+            `;
+
+
+            tbody.appendChild(ligne);
+
+        });
+
+
+    } catch (erreur) {
+
+        console.error(
+            "Erreur chargement comptes :",
+            erreur
+        );
+
+
+        afficherMessageCompte(
+            messageErreurFirebase(erreur),
+            "erreur"
+        );
     }
-
-    utilisateurs.forEach((utilisateur, index) => {
-
-        const tr = document.createElement("tr");
-
-        tr.innerHTML = `
-            <td>${echapperHTML(utilisateur.nom)}</td>
-            <td>${echapperHTML(utilisateur.identifiant)}</td>
-            <td>${echapperHTML(utilisateur.role)}</td>
-            <td>${echapperHTML(utilisateur.province || "-")}</td>
-            <td>${echapperHTML(utilisateur.commune || "-")}</td>
-            <td>${echapperHTML(utilisateur.zone || "-")}</td>
-            <td>${echapperHTML(utilisateur.colline || "-")}</td>
-            <td>${echapperHTML(utilisateur.statut || "Actif")}</td>
-            <td class="actions">
-                <button type="button" class="btn-voir" onclick="voirUtilisateur(${index})">
-                    ðï¸ Voir
-                </button>
-                <button type="button" class="btn-modifier" onclick="modifierUtilisateur(${index})">
-                    âï¸ Modifier
-                </button>
-                <button type="button" class="btn-supprimer" onclick="supprimerUtilisateur(${index})">
-                    ðï¸ Supprimer
-                </button>
-            </td>
-        `;
-
-        tableUtilisateurs.appendChild(tr);
-    });
-
-    afficherNombreComptes();
 }
 
 
@@ -11057,244 +10836,309 @@ function afficherUtilisateurs() {
 // VOIR UN COMPTE
 // ======================================================
 
-function voirUtilisateur(index) {
+async function bprVoirCompte(id) {
 
-    const utilisateur = utilisateurs[index];
+    try {
 
-    if (!utilisateur) return;
-
-    alert(
-        "INFORMATIONS DU COMPTE\n\n" +
-        "Nom : " + (utilisateur.nom || "-") + "\n" +
-        "Identifiant : " + (utilisateur.identifiant || "-") + "\n" +
-        "RÃ´le : " + (utilisateur.role || "-") + "\n" +
-        "Province : " + (utilisateur.province || "-") + "\n" +
-        "Commune : " + (utilisateur.commune || "-") + "\n" +
-        "Zone : " + (utilisateur.zone || "-") + "\n" +
-        "Colline / Quartier : " + (utilisateur.colline || "-") + "\n" +
-        "Statut : " + (utilisateur.statut || "-")
-    );
-}
+        const comptes =
+            await chargerComptes();
 
 
-// ======================================================
-// CREER / MODIFIER UN COMPTE
-// ======================================================
+        const compte =
+            comptes.find(
+                element =>
+                    element.id === id
+            );
 
-function creerUtilisateur(event) {
 
-    if (event) event.preventDefault();
+        if (!compte) {
 
-    if (!nomUtilisateur || !identifiantUtilisateur || !roleUtilisateur) {
-        return;
-    }
+            alert(
+                "Compte introuvable."
+            );
 
-    const nom = nomUtilisateur.value.trim();
-    const identifiant = identifiantUtilisateur.value.trim();
-    const motDePasse = motDePasseUtilisateur ? motDePasseUtilisateur.value : "";
-    const confirmation = confirmationMotDePasse ? confirmationMotDePasse.value : "";
-    const role = roleUtilisateur.value;
-
-    if (!nom || !identifiant || !role) {
-        afficherMessage("Veuillez remplir les champs obligatoires.", "erreur");
-        return;
-    }
-
-    if (motDePasse && motDePasse !== confirmation) {
-        afficherMessage("Les mots de passe ne correspondent pas.", "erreur");
-        return;
-    }
-
-    const erreurTerritoire = verifierTerritoire();
-
-    if (erreurTerritoire) {
-        afficherMessage(erreurTerritoire, "erreur");
-        return;
-    }
-
-    const identifiantExiste = utilisateurs.some((u, index) =>
-        u.identifiant === identifiant && index !== utilisateurEnModification
-    );
-
-    if (identifiantExiste) {
-        afficherMessage("Cet identifiant existe dÃ©jÃ .", "erreur");
-        return;
-    }
-
-    const territoire = obtenirTerritoireCompte();
-
-    const utilisateur = {
-        nom: nom,
-        identifiant: identifiant,
-        motDePasse: motDePasse,
-        confirmationMotDePasse: confirmation,
-        role: role,
-        pays: territoire.pays,
-        province: territoire.province,
-        commune: territoire.commune,
-        zone: territoire.zone,
-        colline: territoire.colline,
-        statut: statutUtilisateur ? statutUtilisateur.value || "Actif" : "Actif"
-    };
-
-    if (utilisateurEnModification !== null) {
-        utilisateurs[utilisateurEnModification] = utilisateur;
-        utilisateurEnModification = null;
-
-        if (btnCreerUtilisateur) {
-            btnCreerUtilisateur.textContent = "CrÃ©er le compte";
+            return;
         }
 
-        if (btnAnnulerModification) {
-            btnAnnulerModification.style.display = "none";
+
+        alert(
+            "👤 INFORMATIONS DU COMPTE\n\n" +
+
+            "Nom : " +
+            (compte.nomUtilisateur || "-") +
+
+            "\n\nIdentifiant : " +
+            (compte.identifiant || "-") +
+
+            "\n\nRôle : " +
+            (compte.role || "-") +
+
+            "\n\nStatut : " +
+            (compte.statut || "-") +
+
+            "\n\nProvince : " +
+            (compte.province || "-") +
+
+            "\n\nCommune : " +
+            (compte.commune || "-") +
+
+            "\n\nZone : " +
+            (compte.zone || "-") +
+
+            "\n\nColline : " +
+            (compte.colline || "-") +
+
+            "\n\nCréé par : " +
+            (compte.creePar || "-")
+        );
+
+
+    } catch (erreur) {
+
+        console.error(
+            "Erreur affichage compte :",
+            erreur
+        );
+
+        alert(
+            messageErreurFirebase(erreur)
+        );
+    }
+}
+
+
+// ======================================================
+// MODIFIER UN COMPTE
+// ======================================================
+
+async function bprModifierCompte(id) {
+
+    try {
+
+        const comptes =
+            await chargerComptes();
+
+
+        const compte =
+            comptes.find(
+                element =>
+                    element.id === id
+            );
+
+
+        if (!compte) {
+
+            alert(
+                "Compte introuvable."
+            );
+
+            return;
         }
 
-        afficherMessage("Compte modifiÃ© avec succÃ¨s.", "succes");
-    } else {
-        utilisateurs.push(utilisateur);
-        afficherMessage("Compte crÃ©Ã© avec succÃ¨s.", "succes");
+
+        const nom =
+            prompt(
+                "Nom de l'utilisateur :",
+                compte.nomUtilisateur || ""
+            );
+
+
+        if (nom === null) {
+            return;
+        }
+
+
+        const statut =
+            prompt(
+                "Statut :",
+                compte.statut || "Actif"
+            );
+
+
+        if (statut === null) {
+            return;
+        }
+
+
+        await modifierCompte(
+            id,
+            {
+
+                nomUtilisateur:
+                    nom.trim(),
+
+                role:
+                    compte.role || "",
+
+                statut:
+                    statut.trim(),
+
+                province:
+                    compte.province || "",
+
+                commune:
+                    compte.commune || "",
+
+                zone:
+                    compte.zone || "",
+
+                colline:
+                    compte.colline || ""
+
+            }
+        );
+
+
+        alert(
+            "✅ Compte modifié avec succès."
+        );
+
+
+        await afficherComptesFirebase();
+
+
+    } catch (erreur) {
+
+        console.error(
+            "Erreur modification :",
+            erreur
+        );
+
+        alert(
+            messageErreurFirebase(erreur)
+        );
     }
-
-    sauvegarderUtilisateurs();
-    afficherUtilisateurs();
-    nettoyerFormulaire();
-}
-
-
-function modifierUtilisateur(index) {
-
-    const utilisateur = utilisateurs[index];
-
-    if (!utilisateur) return;
-
-    utilisateurEnModification = index;
-
-    if (nomUtilisateur) nomUtilisateur.value = utilisateur.nom || "";
-    if (identifiantUtilisateur) identifiantUtilisateur.value = utilisateur.identifiant || "";
-    if (motDePasseUtilisateur) motDePasseUtilisateur.value = utilisateur.motDePasse || "";
-    if (confirmationMotDePasse) confirmationMotDePasse.value = utilisateur.motDePasse || "";
-    if (roleUtilisateur) roleUtilisateur.value = utilisateur.role || "";
-    if (paysUtilisateur) paysUtilisateur.value = utilisateur.pays || "BURUNDI";
-    if (statutUtilisateur) statutUtilisateur.value = utilisateur.statut || "Actif";
-
-    gererChampsSelonRole();
-
-    if (utilisateur.province && provinceUtilisateur) {
-        provinceUtilisateur.value = utilisateur.province;
-        chargerCommunes();
-    }
-
-    if (utilisateur.commune && communeUtilisateur) {
-        communeUtilisateur.value = utilisateur.commune;
-        chargerZones();
-    }
-
-    if (utilisateur.zone && zoneUtilisateur) {
-        zoneUtilisateur.value = utilisateur.zone;
-        chargerCollines();
-    }
-
-    if (utilisateur.colline && collineUtilisateur) {
-        collineUtilisateur.value = utilisateur.colline;
-    }
-
-    if (btnCreerUtilisateur) {
-        btnCreerUtilisateur.textContent = "Enregistrer les modifications";
-    }
-
-    if (btnAnnulerModification) {
-        btnAnnulerModification.style.display = "inline-block";
-    }
-
-    afficherMessage("Modification du compte en cours...", "info");
-}
-
-
-function supprimerUtilisateur(index) {
-
-    const utilisateur = utilisateurs[index];
-
-    if (!utilisateur) return;
-
-    const confirmer = confirm(
-        "Voulez-vous supprimer le compte de " +
-        (utilisateur.nom || utilisateur.identifiant) + " ?"
-    );
-
-    if (!confirmer) return;
-
-    utilisateurs.splice(index, 1);
-    sauvegarderUtilisateurs();
-    afficherUtilisateurs();
-
-    afficherMessage("Compte supprimÃ©.", "succes");
-}
-
-
-function annulerModification() {
-
-    utilisateurEnModification = null;
-
-    nettoyerFormulaire();
-
-    if (btnCreerUtilisateur) {
-        btnCreerUtilisateur.textContent = "CrÃ©er le compte";
-    }
-
-    if (btnAnnulerModification) {
-        btnAnnulerModification.style.display = "none";
-    }
-
-    afficherMessage("Modification annulÃ©e.", "info");
-}
-
-
-function nettoyerFormulaire() {
-
-    if (formCreerUtilisateur) {
-        formCreerUtilisateur.reset();
-    }
-
-    if (paysUtilisateur) paysUtilisateur.value = "BURUNDI";
-    if (provinceUtilisateur) provinceUtilisateur.value = "";
-
-    if (communeUtilisateur) {
-        communeUtilisateur.innerHTML =
-            '<option value="">SÃ©lectionner une commune</option>';
-        communeUtilisateur.disabled = true;
-    }
-
-    if (zoneUtilisateur) {
-        zoneUtilisateur.innerHTML =
-            '<option value="">SÃ©lectionner une zone</option>';
-        zoneUtilisateur.disabled = true;
-    }
-
-    if (collineUtilisateur) {
-        collineUtilisateur.innerHTML =
-            '<option value="">SÃ©lectionner une colline / quartier</option>';
-        collineUtilisateur.disabled = true;
-    }
-
-    gererChampsSelonRole();
 }
 
 
 // ======================================================
-// EVENTS COMPTES
+// SUPPRIMER UN COMPTE
 // ======================================================
+
+async function bprSupprimerCompte(id) {
+
+    try {
+
+        const confirmation =
+            confirm(
+                "Voulez-vous vraiment supprimer ce compte ?"
+            );
+
+
+        if (!confirmation) {
+            return;
+        }
+
+
+        await supprimerCompte(id);
+
+
+        alert(
+            "✅ Compte supprimé de la liste Firestore."
+        );
+
+
+        await afficherComptesFirebase();
+
+
+    } catch (erreur) {
+
+        console.error(
+            "Erreur suppression :",
+            erreur
+        );
+
+        alert(
+            messageErreurFirebase(erreur)
+        );
+    }
+}
+
+
+// ======================================================
+// BOUTONS HTML
+// ======================================================
+
+window.bprVoirCompte =
+    bprVoirCompte;
+
+window.bprModifierCompte =
+    bprModifierCompte;
+
+window.bprSupprimerCompte =
+    bprSupprimerCompte;
+
+window.afficherComptesFirebase =
+    afficherComptesFirebase;
+
+window.creerUtilisateur =
+    creerUtilisateurFirebase;
+
+
+// ======================================================
+// EVENTS
+// ======================================================
+
+// IMPORTANT : un seul submit listener.
+// L'ancien listener localStorage a été supprimé.
 
 if (formCreerUtilisateur) {
-    formCreerUtilisateur.addEventListener("submit", creerUtilisateur);
+
+    formCreerUtilisateur.addEventListener(
+        "submit",
+        async function(event) {
+
+            event.preventDefault();
+
+            await creerUtilisateurFirebase();
+
+        }
+    );
 }
+
 
 if (roleUtilisateur) {
-    roleUtilisateur.addEventListener("change", gererChampsSelonRole);
+
+    roleUtilisateur.addEventListener(
+        "change",
+        gererChampsSelonRole
+    );
 }
 
+
 if (btnAnnulerModification) {
-    btnAnnulerModification.addEventListener("click", annulerModification);
-    btnAnnulerModification.style.display = "none";
+
+    btnAnnulerModification.addEventListener(
+        "click",
+        function(event) {
+
+            event.preventDefault();
+
+            if (formCreerUtilisateur) {
+                formCreerUtilisateur.reset();
+            }
+
+            if (btnCreerUtilisateur) {
+                btnCreerUtilisateur.textContent =
+                    "Créer le compte";
+            }
+
+            if (btnAnnulerModification) {
+                btnAnnulerModification.style.display =
+                    "none";
+            }
+
+            gererChampsSelonRole();
+
+            afficherMessageCompte(
+                "Modification annulée.",
+                "info"
+            );
+        }
+    );
+
+    btnAnnulerModification.style.display =
+        "none";
 }
 
 
@@ -11302,280 +11146,13 @@ if (btnAnnulerModification) {
 // INITIALISATION
 // ======================================================
 
-document.addEventListener("DOMContentLoaded", function () {
-    gererChampsSelonRole();
-    afficherUtilisateurs();
-});
+document.addEventListener(
+    "DOMContentLoaded",
+    async function() {
 
+        gererChampsSelonRole();
 
-// Fonctions accessibles depuis les boutons HTML
-window.creerUtilisateur = creerUtilisateur;
-window.voirUtilisateur = voirUtilisateur;
-window.modifierUtilisateur = modifierUtilisateur;
-window.supprimerUtilisateur = supprimerUtilisateur;
-window.annulerModification = annulerModification;
-window.afficherUtilisateurs = afficherUtilisateurs;
+        await afficherComptesFirebase();
 
-
-
-// ============================================================
-// CRÉATION D'UN COMPTE DEPUIS LE FORMULAIRE
-// ============================================================
-
-const formulaireCompte =
-    document.getElementById("formCreerUtilisateur");
-
-const boutonCreer =
-    document.getElementById("btnCreerUtilisateur");
-
-const messageCompte =
-    document.getElementById("messageUtilisateur");
-
-
-if (formulaireCompte) {
-
-    formulaireCompte.addEventListener(
-        "submit",
-        async function (event) {
-
-            event.preventDefault();
-
-
-            try {
-
-                const nomUtilisateur =
-                    document
-                        .getElementById("nomUtilisateur")
-                        ?.value
-                        .trim();
-
-                const identifiant =
-                    document
-                        .getElementById("identifiantUtilisateur")
-                        ?.value
-                        .trim();
-
-                const motDePasse =
-                    document
-                        .getElementById("motDePasseUtilisateur")
-                        ?.value;
-
-                const confirmation =
-                    document
-                        .getElementById("confirmationMotDePasse")
-                        ?.value;
-
-                const role =
-                    document
-                        .getElementById("roleUtilisateur")
-                        ?.value;
-
-                const statut =
-                    document
-                        .getElementById("statutUtilisateur")
-                        ?.value || "Actif";
-
-
-                // ============================================
-                // VÉRIFICATIONS
-                // ============================================
-
-                if (
-                    !nomUtilisateur ||
-                    !identifiant ||
-                    !motDePasse ||
-                    !confirmation ||
-                    !role
-                ) {
-
-                    afficherMessageCompte(
-                        "Veuillez remplir tous les champs obligatoires.",
-                        "error"
-                    );
-
-                    return;
-                }
-
-
-                if (motDePasse !== confirmation) {
-
-                    afficherMessageCompte(
-                        "Les mots de passe ne correspondent pas.",
-                        "error"
-                    );
-
-                    return;
-                }
-
-
-                // Vérifier le rôle
-                if (
-                    !peutCreerRole(role)
-                ) {
-
-                    afficherMessageCompte(
-                        "Vous n'êtes pas autorisé à créer ce type de compte.",
-                        "error"
-                    );
-
-                    return;
-                }
-
-
-                // ============================================
-                // TERRITOIRE
-                // ============================================
-
-                const province =
-                    document
-                        .getElementById("provinceUtilisateur")
-                        ?.value || "";
-
-                const commune =
-                    document
-                        .getElementById("communeUtilisateur")
-                        ?.value || "";
-
-                const zone =
-                    document
-                        .getElementById("zoneUtilisateur")
-                        ?.value || "";
-
-                const colline =
-                    document
-                        .getElementById("collineUtilisateur")
-                        ?.value || "";
-
-
-                const territoire = {
-
-                    province,
-                    commune,
-                    zone,
-                    colline
-
-                };
-
-
-                if (
-                    !territoireAutorise(
-                        territoire
-                    )
-                ) {
-
-                    afficherMessageCompte(
-                        "Ce territoire ne correspond pas à vos autorisations.",
-                        "error"
-                    );
-
-                    return;
-                }
-
-
-                // ============================================
-                // DONNÉES DU COMPTE
-                // ============================================
-
-                const donneesCompte = {
-
-                    nomUtilisateur,
-
-                    identifiant,
-
-                    role,
-
-                    statut,
-
-                    province,
-
-                    commune,
-
-                    zone,
-
-                    colline
-
-                };
-
-
-                // ============================================
-                // ENVOYER À FIRESTORE
-                // ============================================
-
-                if (
-                    window.BPR_FIREBASE
-                ) {
-
-                    await window.BPR_FIREBASE
-                        .creerCompteFirestore(
-                            donneesCompte
-                        );
-
-                } else {
-
-                    throw new Error(
-                        "Firebase BPR n'est pas chargé."
-                    );
-
-                }
-
-
-                // ============================================
-                // SUCCÈS
-                // ============================================
-
-                afficherMessageCompte(
-                    "Compte créé avec succès dans Firebase.",
-                    "success"
-                );
-
-
-                formulaireCompte.reset();
-
-
-                // Actualiser la liste
-                await afficherComptesFirestore();
-
-
-            } catch (erreur) {
-
-                console.error(
-                    erreur
-                );
-
-                afficherMessageCompte(
-                    "Erreur lors de la création du compte.",
-                    "error"
-                );
-
-            }
-
-        }
-    );
-
-}
-
-
-// ============================================================
-// MESSAGE
-// ============================================================
-
-function afficherMessageCompte(
-    message,
-    type
-) {
-
-    if (!messageCompte) {
-        return;
     }
-
-
-    messageCompte.textContent =
-        message;
-
-
-    messageCompte.className =
-        type === "success"
-            ? "message-success"
-            : "message-error";
-
-}
+);
