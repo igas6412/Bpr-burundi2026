@@ -3,19 +3,18 @@
 /* ============================================================
    BURUNDI PEOPLE REGISTRY
    index.js
-   CONNEXION AVEC FIREBASE AUTHENTICATION + FIRESTORE
+   LOGIN AVEC FIREBASE AUTHENTICATION
    ============================================================ */
 
-import {
-    connecter
-} from "./bpr-firebase.js";
+import { connecter } from "./bpr-firebase.js";
 
 
 /* ============================================================
    ÉLÉMENTS HTML
 ============================================================ */
 
-const loginForm = document.getElementById("loginForm");
+const loginForm =
+    document.getElementById("loginForm");
 
 const usernameInput =
     document.getElementById("username");
@@ -31,7 +30,7 @@ const togglePassword =
 
 
 /* ============================================================
-   AFFICHER UN MESSAGE
+   AFFICHER MESSAGE
 ============================================================ */
 
 function afficherMessage(message, type = "erreur") {
@@ -49,7 +48,7 @@ function afficherMessage(message, type = "erreur") {
 
 
 /* ============================================================
-   EFFACER LE MESSAGE
+   EFFACER MESSAGE
 ============================================================ */
 
 function effacerMessage() {
@@ -66,7 +65,7 @@ function effacerMessage() {
 
 
 /* ============================================================
-   AFFICHER / MASQUER LE MOT DE PASSE
+   AFFICHER / MASQUER MOT DE PASSE
 ============================================================ */
 
 if (togglePassword && passwordInput) {
@@ -75,11 +74,15 @@ if (togglePassword && passwordInput) {
         "click",
         function () {
 
-            if (passwordInput.type === "password") {
+            if (
+                passwordInput.type ===
+                "password"
+            ) {
 
                 passwordInput.type = "text";
 
-                togglePassword.textContent = "🙈";
+                togglePassword.textContent =
+                    "🙈";
 
                 togglePassword.setAttribute(
                     "aria-label",
@@ -88,9 +91,11 @@ if (togglePassword && passwordInput) {
 
             } else {
 
-                passwordInput.type = "password";
+                passwordInput.type =
+                    "password";
 
-                togglePassword.textContent = "👁️";
+                togglePassword.textContent =
+                    "👁️";
 
                 togglePassword.setAttribute(
                     "aria-label",
@@ -103,33 +108,28 @@ if (togglePassword && passwordInput) {
 
 
 /* ============================================================
-   EFFACER L'ERREUR LORSQUE L'UTILISATEUR ÉCRIT
+   EFFACER MESSAGE QUAND ON ÉCRIT
 ============================================================ */
 
 if (usernameInput) {
 
     usernameInput.addEventListener(
         "input",
-        function () {
-            effacerMessage();
-        }
+        effacerMessage
     );
 }
-
 
 if (passwordInput) {
 
     passwordInput.addEventListener(
         "input",
-        function () {
-            effacerMessage();
-        }
+        effacerMessage
     );
 }
 
 
 /* ============================================================
-   CONNEXION
+   FORMULAIRE LOGIN
 ============================================================ */
 
 if (loginForm) {
@@ -141,9 +141,9 @@ if (loginForm) {
             event.preventDefault();
 
 
-            /* ------------------------------------------------
-               RÉCUPÉRER IDENTIFIANT ET MOT DE PASSE
-            ------------------------------------------------ */
+            /* ==================================================
+               RÉCUPÉRER LES DONNÉES
+            ================================================== */
 
             const identifiant =
                 usernameInput
@@ -156,9 +156,9 @@ if (loginForm) {
                     : "";
 
 
-            /* ------------------------------------------------
-               VÉRIFICATION IDENTIFIANT
-            ------------------------------------------------ */
+            /* ==================================================
+               CHAMPS VIDES
+            ================================================== */
 
             if (!identifiant) {
 
@@ -166,17 +166,11 @@ if (loginForm) {
                     "❌ Veuillez saisir votre nom d'utilisateur."
                 );
 
-                if (usernameInput) {
-                    usernameInput.focus();
-                }
+                usernameInput?.focus();
 
                 return;
             }
 
-
-            /* ------------------------------------------------
-               VÉRIFICATION MOT DE PASSE
-            ------------------------------------------------ */
 
             if (!motDePasse) {
 
@@ -184,27 +178,15 @@ if (loginForm) {
                     "❌ Veuillez saisir votre mot de passe."
                 );
 
-                if (passwordInput) {
-                    passwordInput.focus();
-                }
+                passwordInput?.focus();
 
                 return;
             }
 
 
-            /* ------------------------------------------------
-               MESSAGE DE CHARGEMENT
-            ------------------------------------------------ */
-
-            afficherMessage(
-                "⏳ Connexion en cours...",
-                "succes"
-            );
-
-
-            /* ------------------------------------------------
-               DÉSACTIVER LE BOUTON PENDANT LA CONNEXION
-            ------------------------------------------------ */
+            /* ==================================================
+               BOUTON CONNEXION
+            ================================================== */
 
             const boutonConnexion =
                 loginForm.querySelector(
@@ -226,11 +208,17 @@ if (loginForm) {
             }
 
 
-            try {
+            afficherMessage(
+                "⏳ Connexion en cours...",
+                "succes"
+            );
 
-                /* ============================================
-                   CONNEXION FIREBASE
-                ============================================ */
+
+            /* ==================================================
+               CONNEXION FIREBASE
+            ================================================== */
+
+            try {
 
                 const compte =
                     await connecter(
@@ -239,9 +227,9 @@ if (loginForm) {
                     );
 
 
-                /* ============================================
-                   VÉRIFIER LE COMPTE
-                ============================================ */
+                /* ==================================================
+                   COMPTE INTROUVABLE
+                ================================================== */
 
                 if (!compte) {
 
@@ -253,9 +241,9 @@ if (loginForm) {
                 }
 
 
-                /* ============================================
+                /* ==================================================
                    STATUT DU COMPTE
-                ============================================ */
+                ================================================== */
 
                 const statut =
                     String(
@@ -264,10 +252,6 @@ if (loginForm) {
                     .trim()
                     .toLowerCase();
 
-
-                /* --------------------------------------------
-                   COMPTES INACTIFS / BLOQUÉS
-                -------------------------------------------- */
 
                 if (
                     statut === "inactif" ||
@@ -278,16 +262,16 @@ if (loginForm) {
                 ) {
 
                     afficherMessage(
-                        "❌ Ce compte est désactivé ou bloqué."
+                        "❌ Ce compte est désactivé."
                     );
 
                     return;
                 }
 
 
-                /* ============================================
-                   NOM UTILISATEUR
-                ============================================ */
+                /* ==================================================
+                   NOM
+                ================================================== */
 
                 const nomUtilisateur =
                     compte.nomUtilisateur ||
@@ -295,24 +279,23 @@ if (loginForm) {
                     identifiant;
 
 
-                /* ============================================
+                /* ==================================================
                    RÔLE
-                ============================================ */
+                ================================================== */
 
                 const role =
                     String(
                         compte.role || ""
-                    )
-                    .trim();
+                    ).trim();
 
 
                 const roleNormalise =
                     role.toLowerCase();
 
 
-                /* ============================================
-                   VÉRIFICATION DU RÔLE
-                ============================================ */
+                /* ==================================================
+                   RÔLES AUTORISÉS
+                ================================================== */
 
                 const rolesAutorises = [
 
@@ -340,7 +323,7 @@ if (loginForm) {
                     );
 
                     console.error(
-                        "Rôle reçu depuis Firestore :",
+                        "Rôle reçu :",
                         role
                     );
 
@@ -348,9 +331,9 @@ if (loginForm) {
                 }
 
 
-                /* ============================================
-                   INFORMATIONS DE SESSION
-                ============================================ */
+                /* ==================================================
+                   SESSION
+                ================================================== */
 
                 const session = {
 
@@ -368,50 +351,54 @@ if (loginForm) {
                         compte.role || "",
 
                     statut:
-                        compte.statut || "Actif",
+                        compte.statut ||
+                        "Actif",
 
                     pays:
-                        compte.pays || "Burundi",
+                        compte.pays ||
+                        "Burundi",
 
                     province:
-                        compte.province || "",
+                        compte.province ||
+                        "",
 
                     commune:
-                        compte.commune || "",
+                        compte.commune ||
+                        "",
 
                     zone:
-                        compte.zone || "",
+                        compte.zone ||
+                        "",
 
                     colline:
-                        compte.colline || "",
+                        compte.colline ||
+                        "",
 
                     emailFirebase:
-                        compte.emailFirebase || ""
+                        compte.emailFirebase ||
+                        ""
 
                 };
 
 
-                /* ============================================
-                   SAUVEGARDER LA SESSION
-                ============================================ */
+                /* ==================================================
+                   SAUVEGARDER SESSION
+                ================================================== */
 
                 localStorage.setItem(
                     "BPR_COMPTE_CONNECTE",
                     JSON.stringify(session)
                 );
 
-
                 localStorage.setItem(
                     "BPR_USER",
                     JSON.stringify(session)
                 );
 
-
                 localStorage.setItem(
                     "currentUser",
                     JSON.stringify(session)
                 );
-
 
                 localStorage.setItem(
                     "utilisateurConnecte",
@@ -419,9 +406,9 @@ if (loginForm) {
                 );
 
 
-                /* ============================================
-                   MESSAGE DE SUCCÈS
-                ============================================ */
+                /* ==================================================
+                   CONNEXION RÉUSSIE
+                ================================================== */
 
                 afficherMessage(
                     "✅ Connexion réussie. Bienvenue " +
@@ -431,17 +418,17 @@ if (loginForm) {
                 );
 
 
-                /* ============================================
-                   REDIRECTION SELON LE RÔLE
-                ============================================ */
+                /* ==================================================
+                   REDIRECTION
+                ================================================== */
 
                 setTimeout(
                     function () {
 
 
-                        /* ------------------------------------
+                        /* ------------------------------------------
                            MANAGER NATIONAL
-                        ------------------------------------ */
+                        ------------------------------------------ */
 
                         if (
                             roleNormalise ===
@@ -455,9 +442,9 @@ if (loginForm) {
                         }
 
 
-                        /* ------------------------------------
+                        /* ------------------------------------------
                            MANAGER PROVINCIAL
-                        ------------------------------------ */
+                        ------------------------------------------ */
 
                         if (
                             roleNormalise ===
@@ -471,9 +458,9 @@ if (loginForm) {
                         }
 
 
-                        /* ------------------------------------
+                        /* ------------------------------------------
                            MANAGER COMMUNAL
-                        ------------------------------------ */
+                        ------------------------------------------ */
 
                         if (
                             roleNormalise ===
@@ -487,9 +474,9 @@ if (loginForm) {
                         }
 
 
-                        /* ------------------------------------
+                        /* ------------------------------------------
                            MANAGER ZONAL
-                        ------------------------------------ */
+                        ------------------------------------------ */
 
                         if (
                             roleNormalise ===
@@ -503,9 +490,9 @@ if (loginForm) {
                         }
 
 
-                        /* ------------------------------------
+                        /* ------------------------------------------
                            UTILISATEUR
-                        ------------------------------------ */
+                        ------------------------------------------ */
 
                         if (
                             roleNormalise ===
@@ -518,7 +505,6 @@ if (loginForm) {
                             return;
                         }
 
-
                     },
                     700
                 );
@@ -527,19 +513,13 @@ if (loginForm) {
             } catch (error) {
 
                 console.error(
-                    "===================================="
+                    "===== ERREUR LOGIN FIREBASE ====="
                 );
 
-                console.error(
-                    "ERREUR CONNEXION FIREBASE"
-                );
+                console.error(error);
 
                 console.error(
-                    error
-                );
-
-                console.error(
-                    "Code :",
+                    "Code Firebase :",
                     error?.code
                 );
 
@@ -548,27 +528,19 @@ if (loginForm) {
                     error?.message
                 );
 
-                console.error(
-                    "===================================="
-                );
 
-
-                /* ============================================
-                   MESSAGE D'ERREUR PAR CODE FIREBASE
-                ============================================ */
+                /* ==================================================
+                   MESSAGE D'ERREUR
+                ================================================== */
 
                 let message =
-                    "❌ Identifiant ou mot de passe incorrect.";
+                    "❌ Erreur pendant la connexion.";
 
 
-                if (error && error.code) {
+                if (error?.code) {
 
                     switch (error.code) {
 
-
-                        /* ------------------------------------
-                           IDENTIFIANT / MOT DE PASSE INCORRECT
-                        ------------------------------------ */
 
                         case "auth/invalid-credential":
 
@@ -578,21 +550,13 @@ if (loginForm) {
                             break;
 
 
-                        /* ------------------------------------
-                           UTILISATEUR INTROUVABLE
-                        ------------------------------------ */
-
                         case "auth/user-not-found":
 
                             message =
-                                "❌ Ce nom d'utilisateur n'existe pas.";
+                                "❌ Cet utilisateur n'existe pas.";
 
                             break;
 
-
-                        /* ------------------------------------
-                           MOT DE PASSE INCORRECT
-                        ------------------------------------ */
 
                         case "auth/wrong-password":
 
@@ -602,10 +566,6 @@ if (loginForm) {
                             break;
 
 
-                        /* ------------------------------------
-                           EMAIL / IDENTIFIANT INVALIDE
-                        ------------------------------------ */
-
                         case "auth/invalid-email":
 
                             message =
@@ -613,46 +573,6 @@ if (loginForm) {
 
                             break;
 
-
-                        /* ------------------------------------
-                           TROP DE TENTATIVES
-                        ------------------------------------ */
-
-                        case "auth/too-many-requests":
-
-                            message =
-                                "❌ Trop de tentatives. Réessayez plus tard.";
-
-                            break;
-
-
-                        /* ------------------------------------
-                           INTERNET
-                        ------------------------------------ */
-
-                        case "auth/network-request-failed":
-
-                            message =
-                                "❌ Problème de connexion Internet.";
-
-                            break;
-
-
-                        /* ------------------------------------
-                           FIRESTORE
-                        ------------------------------------ */
-
-                        case "permission-denied":
-
-                            message =
-                                "❌ Accès Firestore refusé.";
-
-                            break;
-
-
-                        /* ------------------------------------
-                           UTILISATEUR DÉSACTIVÉ FIREBASE
-                        ------------------------------------ */
 
                         case "auth/user-disabled":
 
@@ -662,9 +582,21 @@ if (loginForm) {
                             break;
 
 
-                        /* ------------------------------------
-                           OPÉRATION NON AUTORISÉE
-                        ------------------------------------ */
+                        case "auth/too-many-requests":
+
+                            message =
+                                "❌ Trop de tentatives. Réessayez plus tard.";
+
+                            break;
+
+
+                        case "auth/network-request-failed":
+
+                            message =
+                                "❌ Vérifiez votre connexion Internet.";
+
+                            break;
+
 
                         case "auth/operation-not-allowed":
 
@@ -674,9 +606,13 @@ if (loginForm) {
                             break;
 
 
-                        /* ------------------------------------
-                           ERREUR PAR DÉFAUT
-                        ------------------------------------ */
+                        case "permission-denied":
+
+                            message =
+                                "❌ Accès Firestore refusé.";
+
+                            break;
+
 
                         default:
 
@@ -691,42 +627,40 @@ if (loginForm) {
 
                 afficherMessage(message);
 
-
             } finally {
 
-
-                /* ============================================
+                /* ==================================================
                    RÉACTIVER LE BOUTON
-                ============================================ */
+                ================================================== */
 
                 if (boutonConnexion) {
 
-                    boutonConnexion.disabled = false;
+                    boutonConnexion.disabled =
+                        false;
 
                     boutonConnexion.textContent =
                         ancienTexte ||
                         "🔐 Se connecter";
                 }
             }
-
         }
     );
 }
 
 
 /* ============================================================
-   VÉRIFICATION DE LA PAGE
+   TEST
 ============================================================ */
 
 console.log(
-    "✅ BPR index.js chargé avec succès."
+    "✅ BPR index.js chargé."
 );
 
 console.log(
-    "🔥 Login Firebase prêt."
+    "🔥 Firebase Login prêt."
 );
 
 
 /* ============================================================
-   FIN INDEX.JS
+   FIN
 ============================================================ */
