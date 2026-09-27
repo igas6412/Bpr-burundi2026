@@ -1,5 +1,1125 @@
 
+/* ============================================================
+   BURUNDI PEOPLE REGISTRY
+   bpr-firebase.js
+   FIREBASE AUTH + FIRESTORE
+   ============================================================ */
 
+
+/* ============================================================
+   FIREBASE CONFIG
+============================================================ */
+
+import {
+    auth,
+    db,
+    firebaseConfig
+} from "./firebase-config.js";
+
+
+/* ============================================================
+   FIREBASE APP
+============================================================ */
+
+import {
+    initializeApp,
+    getApps
+} from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
+
+/* ============================================================
+ FIREBASE APP PRINCIPALE
+============================================================ */
+const app = initializeApp(firebaseConfig);
+
+const auth = getAuth(app);
+
+const db = getFirestore(app);
+
+
+
+/* ============================================================
+   FIREBASE AUTH
+============================================================ */
+
+import {
+    getAuth,
+    createUserWithEmailAndPassword,
+    signInWithEmailAndPassword,
+    signOut,
+    deleteUser,
+    onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
+
+
+/* ============================================================
+   FIRESTORE
+============================================================ */
+
+import {
+    collection,
+    doc,
+    setDoc,
+    getDoc,
+    getDocs,
+    updateDoc,
+    deleteDoc,
+    serverTimestamp,
+    query,
+    where
+} from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
+
+
+/* ============================================================
+   COLLECTIONS
+============================================================ */
+
+const COMPTES = "comptes";
+const MENAGES = "menages";
+const PERSONNES = "personnes";
+const VISITEURS = "visiteurs";
+
+
+/* ============================================================
+   AUTH SECONDAIRE
+   ------------------------------------------------------------
+   Iyi Auth ikoreshwa gusa mu gukora compte nshasha.
+
+   Umuyobozi asanzwe connecté kuri:
+       auth
+
+   Compte nshasha ikorwa kuri:
+       secondaryAuth
+
+   Ivyo bituma Manager atava muri session yiwe.
+============================================================ */
+
+let secondaryApp = null;
+
+
+const applicationsExistantes =
+    getApps();
+
+
+const appSecondaire =
+    applicationsExistantes.find(
+        app =>
+            app.name === "BPR_CREATE_USER"
+    );
+
+
+if (appSecondaire) {
+
+    secondaryApp =
+        appSecondaire;
+
+} else {
+
+    secondaryApp =
+        initializeApp(
+            firebaseConfig,
+            "BPR_CREATE_USER"
+        );
+}
+
+
+const secondaryAuth =
+    getAuth(
+        secondaryApp
+    );
+
+
+/* ============================================================
+   EMAIL TECHNIQUE
+   ------------------------------------------------------------
+   Umukoresha akoresha identifiant yiwe.
+   Firebase ikoresha email technique inyuma.
+============================================================ */
+
+function emailBPR(
+    identifiant
+) {
+
+    return (
+
+        String(
+            identifiant || ""
+        )
+        .trim()
+        .toLowerCase()
+        .replace(
+            /\s+/g,
+            ""
+        )
+        .replace(
+            /[^a-z0-9._-]/g,
+            ""
+        )
+
+        +
+
+        "@burundi-people-registry.firebaseapp.com"
+
+    );
+}
+
+
+/* ============================================================
+   CREER COMPTE
+   ------------------------------------------------------------
+   Manager NTASIMBURWA na compte nshasha.
+============================================================ */
+
+export async function creerCompte(
+    donnees
+) {
+
+    if (!donnees) {
+
+        throw new Error(
+            "Données du compte manquantes."
+        );
+    }
+
+
+    const identifiant =
+        String(
+            donnees.identifiant || ""
+        ).trim();
+
+
+    const motDePasse =
+        String(
+            donnees.motDePasse || ""
+        );
+
+
+    if (!identifiant) {
+
+        throw new Error(
+            "L'identifiant est obligatoire."
+        );
+    }
+
+
+    if (!motDePasse) {
+
+        throw new Error(
+            "Le mot de passe est obligatoire."
+        );
+    }
+
+
+    if (motDePasse.length < 6) {
+
+        throw new Error(
+            "Le mot de passe doit contenir au moins 6 caractères."
+        );
+    }
+
+
+    const email =
+        emailBPR(
+            identifiant
+        );
+
+    let utilisateurCree = null;
+
+    try {
+
+        /* ====================================================
+           CREER AUTH AVEC AUTH SECONDAIRE
+        ==================================================== */
+
+        const resultat =
+            await createUserWithEmailAndPassword(
+                secondaryAuth,
+                email,
+                motDePasse
+            );
+
+
+        const user =
+            resultat.user;
+
+        utilisateurCree = user;
+
+
+        /* ====================================================
+           DONNEES DU COMPTE
+        ==================================================== */
+
+        const compte = {
+
+            uid:
+                user.uid,
+
+            nomUtilisateur:
+                donnees.nomUtilisateur || "",
+
+            identifiant:
+                identifiant,
+
+            role:
+                donnees.role || "",
+
+            statut:
+                donnees.statut || "Actif",
+
+            pays:
+                donnees.pays ||
+                "BURUNDI",
+
+            province:
+                donnees.province || "",
+
+            commune:
+                donnees.commune || "",
+
+            zone:
+                donnees.zone || "",
+
+            colline:
+                donnees.colline || "",
+
+            creeParUid:
+                donnees.creeParUid || "",
+
+            creePar:
+                donnees.creePar || "",
+
+            creeParRole:
+                donnees.creeParRole || "",
+
+            emailFirebase:
+                email,
+
+            creeLe:
+                serverTimestamp()
+
+        };
+
+
+        /* ====================================================
+           FIRESTORE
+        ==================================================== */
+
+        await setDoc(
+
+            doc(
+                db,
+                COMPTES,
+                user.uid
+            ),
+
+            compte
+
+        );
+
+
+        /* ====================================================
+           LOGOUT AUTH SECONDAIRE
+           ----------------------------------------------------
+           Ntikora logout ya Manager.
+        ==================================================== */
+
+        try {
+
+            await signOut(
+                secondaryAuth
+            );
+
+        } catch (erreur) {
+
+            console.warn(
+                "Auth secondaire :",
+                erreur
+            );
+
+        }
+
+
+        return {
+
+            success:
+                true,
+
+            uid:
+                user.uid
+
+        };
+
+
+    } catch (erreur) {
+
+        console.error(
+            "Erreur création compte :",
+            erreur
+        );
+
+        // Si Firestore refuse l'écriture après la création Auth,
+        // supprimer l'utilisateur secondaire pour éviter un UID
+        // orphelin qui bloquerait une nouvelle tentative.
+        if (utilisateurCree) {
+            try {
+                await deleteUser(utilisateurCree);
+            } catch (suppressionErreur) {
+                console.warn(
+                    "Impossible de nettoyer le compte Auth secondaire :",
+                    suppressionErreur
+                );
+            }
+        }
+
+
+        if (
+            erreur.code ===
+            "auth/email-already-in-use"
+        ) {
+
+            throw new Error(
+                "Cet identifiant existe déjà."
+            );
+        }
+
+
+        if (
+            erreur.code ===
+            "auth/weak-password"
+        ) {
+
+            throw new Error(
+                "Le mot de passe doit contenir au moins 6 caractères."
+            );
+        }
+
+
+        if (
+            erreur.code ===
+            "auth/invalid-email"
+        ) {
+
+            throw new Error(
+                "Identifiant invalide."
+            );
+        }
+
+
+        if (
+            erreur.code ===
+            "permission-denied"
+        ) {
+
+            throw new Error(
+                "Accès refusé par les règles Firebase."
+            );
+        }
+
+
+        throw erreur;
+    }
+}
+
+
+/* ============================================================
+   CONNECTER
+============================================================ */
+
+export async function connecter(
+    identifiant,
+    motDePasse
+) {
+
+    const email =
+        emailBPR(
+            identifiant
+        );
+
+
+    try {
+
+        const resultat =
+            await signInWithEmailAndPassword(
+                auth,
+                email,
+                motDePasse
+            );
+
+
+        const user =
+            resultat.user;
+
+
+        /* ====================================================
+           CHERCHER COMPTE FIRESTORE
+        ==================================================== */
+
+        const reference =
+            doc(
+                db,
+                COMPTES,
+                user.uid
+            );
+
+
+        const snapshot =
+            await getDoc(
+                reference
+            );
+
+
+        if (!snapshot.exists()) {
+
+            throw new Error(
+                "Compte BPR introuvable dans Firestore."
+            );
+        }
+
+
+        const compte =
+            snapshot.data();
+
+
+        /* ====================================================
+           STATUT
+        ==================================================== */
+
+        const statut =
+            String(
+                compte.statut ||
+                "Actif"
+            )
+            .trim()
+            .toLowerCase();
+
+
+        if (
+            statut === "inactif"
+        ) {
+
+            await signOut(
+                auth
+            );
+
+            throw new Error(
+                "Ce compte est inactif."
+            );
+        }
+
+
+        /* ====================================================
+           SESSION
+        ==================================================== */
+
+        const compteSession = {
+
+            id:
+                user.uid,
+
+            uid:
+                user.uid,
+
+            ...compte
+
+        };
+
+
+        localStorage.setItem(
+            "BPR_COMPTE_CONNECTE",
+            JSON.stringify(
+                compteSession
+            )
+        );
+
+
+        localStorage.setItem(
+            "bpr_current_user",
+            JSON.stringify(
+                compteSession
+            )
+        );
+
+
+        localStorage.setItem(
+            "bpr_manager_connecte",
+            JSON.stringify(
+                compteSession
+            )
+        );
+
+
+        localStorage.setItem(
+            "isLoggedIn",
+            "true"
+        );
+
+
+        localStorage.setItem(
+            "username",
+            compteSession.identifiant || ""
+        );
+
+
+        localStorage.setItem(
+            "userName",
+            compteSession.nomUtilisateur || ""
+        );
+
+
+        localStorage.setItem(
+            "userId",
+            compteSession.uid || ""
+        );
+
+
+        localStorage.setItem(
+            "userRole",
+            compteSession.role || ""
+        );
+
+
+        localStorage.setItem(
+            "userPays",
+            compteSession.pays || "BURUNDI"
+        );
+
+
+        localStorage.setItem(
+            "userProvince",
+            compteSession.province || ""
+        );
+
+
+        localStorage.setItem(
+            "userCommune",
+            compteSession.commune || ""
+        );
+
+
+        localStorage.setItem(
+            "userZone",
+            compteSession.zone || ""
+        );
+
+
+        localStorage.setItem(
+            "userColline",
+            compteSession.colline || ""
+        );
+
+
+        return compteSession;
+
+
+    } catch (erreur) {
+
+        console.error(
+            "Erreur connexion Firebase :",
+            erreur
+        );
+
+
+        if (
+            erreur.code ===
+            "auth/invalid-credential"
+        ) {
+
+            throw new Error(
+                "Identifiant ou mot de passe incorrect."
+            );
+        }
+
+
+        if (
+            erreur.code ===
+            "auth/user-not-found"
+        ) {
+
+            throw new Error(
+                "Compte introuvable."
+            );
+        }
+
+
+        if (
+            erreur.code ===
+            "auth/wrong-password"
+        ) {
+
+            throw new Error(
+                "Mot de passe incorrect."
+            );
+        }
+
+
+        throw erreur;
+    }
+}
+
+
+/* ============================================================
+   DECONNECTER
+============================================================ */
+
+export async function deconnecter() {
+
+    await signOut(
+        auth
+    );
+
+
+    localStorage.removeItem(
+        "BPR_COMPTE_CONNECTE"
+    );
+
+
+    localStorage.removeItem(
+        "bpr_current_user"
+    );
+
+
+    localStorage.removeItem(
+        "bpr_manager_connecte"
+    );
+
+
+    localStorage.removeItem(
+        "isLoggedIn"
+    );
+
+
+    localStorage.removeItem(
+        "username"
+    );
+
+
+    localStorage.removeItem(
+        "userName"
+    );
+
+
+    localStorage.removeItem(
+        "userId"
+    );
+
+
+    localStorage.removeItem(
+        "userRole"
+    );
+
+
+    localStorage.removeItem(
+        "userPays"
+    );
+
+
+    localStorage.removeItem(
+        "userProvince"
+    );
+
+
+    localStorage.removeItem(
+        "userCommune"
+    );
+
+
+    localStorage.removeItem(
+        "userZone"
+    );
+
+
+    localStorage.removeItem(
+        "userColline"
+    );
+}
+
+
+/* ============================================================
+   COMPTE CONNECTE
+============================================================ */
+
+export async function compteConnecte() {
+
+    const user =
+        auth.currentUser;
+
+
+    if (!user) {
+
+        return null;
+    }
+
+
+    const reference =
+        doc(
+            db,
+            COMPTES,
+            user.uid
+        );
+
+
+    const snapshot =
+        await getDoc(
+            reference
+        );
+
+
+    if (!snapshot.exists()) {
+
+        return null;
+    }
+
+
+    return {
+
+        id:
+            snapshot.id,
+
+        uid:
+            user.uid,
+
+        ...snapshot.data()
+
+    };
+}
+
+
+/* ============================================================
+   CHARGER COMPTES
+============================================================ */
+
+export async function chargerComptes() {
+
+    /*
+       IMPORTANT :
+       La liste des comptes est filtrée par le territoire
+       du compte actuellement connecté. Le Manager National
+       est le seul à voir tous les comptes.
+    */
+
+    const actuel = await compteConnecte();
+
+    if (!actuel) {
+        throw new Error("Aucun compte connecté.");
+    }
+
+    const role = normaliserRoleFirebase(actuel.role);
+    const contraintes = [];
+
+    if (role === "Manager Provincial") {
+        contraintes.push(where("province", "==", actuel.province || ""));
+    } else if (role === "Manager Communal") {
+        contraintes.push(where("province", "==", actuel.province || ""));
+        contraintes.push(where("commune", "==", actuel.commune || ""));
+    } else if (role === "Manager Zonal") {
+        contraintes.push(where("province", "==", actuel.province || ""));
+        contraintes.push(where("commune", "==", actuel.commune || ""));
+        contraintes.push(where("zone", "==", actuel.zone || ""));
+    } else if (role === "Utilisateur") {
+        contraintes.push(where("province", "==", actuel.province || ""));
+        contraintes.push(where("commune", "==", actuel.commune || ""));
+        contraintes.push(where("zone", "==", actuel.zone || ""));
+        contraintes.push(where("colline", "==", actuel.colline || ""));
+    } else if (role !== "Manager National") {
+        return [];
+    }
+
+    const reference = collection(db, COMPTES);
+    const requete = contraintes.length
+        ? query(reference, ...contraintes)
+        : reference;
+
+    const snapshot = await getDocs(requete);
+
+    return snapshot.docs.map(document => ({
+        id: document.id,
+        ...document.data()
+    }));
+}
+
+function normaliserRoleFirebase(role) {
+    return String(role || "")
+        .normalize("NFD")
+        .replace(/[\\u0300-\\u036f]/g, "")
+        .trim()
+        .replace(/\\s+/g, " ")
+        .toLowerCase()
+        .replace(/^manager national$/, "Manager National")
+        .replace(/^manager provincial$/, "Manager Provincial")
+        .replace(/^manager communal$/, "Manager Communal")
+        .replace(/^manager zonal$/, "Manager Zonal")
+        .replace(/^utilisateur$/, "Utilisateur");
+}
+
+
+/* ============================================================
+   MODIFIER COMPTE
+============================================================ */
+
+export async function modifierCompte(
+    uid,
+    donnees
+) {
+
+    if (!uid) {
+
+        throw new Error(
+            "ID du compte manquant."
+        );
+    }
+
+
+    await updateDoc(
+
+        doc(
+            db,
+            COMPTES,
+            uid
+        ),
+
+        {
+
+            nomUtilisateur:
+                donnees.nomUtilisateur ||
+                "",
+
+            role:
+                donnees.role ||
+                "",
+
+            statut:
+                donnees.statut ||
+                "Actif",
+
+            pays:
+                donnees.pays ||
+                "BURUNDI",
+
+            province:
+                donnees.province ||
+                "",
+
+            commune:
+                donnees.commune ||
+                "",
+
+            zone:
+                donnees.zone ||
+                "",
+
+            colline:
+                donnees.colline ||
+                "",
+
+            modifieLe:
+                serverTimestamp()
+
+        }
+
+    );
+
+
+    return true;
+}
+
+
+/* ============================================================
+   SUPPRIMER COMPTE
+============================================================ */
+
+export async function supprimerCompte(
+    uid
+) {
+
+    if (!uid) {
+
+        throw new Error(
+            "ID du compte manquant."
+        );
+    }
+
+
+    await deleteDoc(
+
+        doc(
+            db,
+            COMPTES,
+            uid
+        )
+
+    );
+
+
+    return true;
+}
+
+
+/* ============================================================
+   ENREGISTRER MENAGE
+============================================================ */
+
+export async function enregistrerMenage(
+    id,
+    donnees
+) {
+
+    if (!id) {
+
+        throw new Error(
+            "ID du ménage manquant."
+        );
+    }
+
+
+    await setDoc(
+
+        doc(
+            db,
+            MENAGES,
+            id
+        ),
+
+        {
+
+            ...donnees,
+
+            modifieLe:
+                serverTimestamp()
+
+        }
+
+    );
+
+
+    return true;
+}
+
+
+/* ============================================================
+   ENREGISTRER PERSONNE
+============================================================ */
+
+export async function enregistrerPersonne(
+    id,
+    donnees
+) {
+
+    if (!id) {
+
+        throw new Error(
+            "ID de la personne manquant."
+        );
+    }
+
+
+    await setDoc(
+
+        doc(
+            db,
+            PERSONNES,
+            id
+        ),
+
+        {
+
+            ...donnees,
+
+            modifieLe:
+                serverTimestamp()
+
+        }
+
+    );
+
+
+    return true;
+}
+
+
+/* ============================================================
+   ENREGISTRER VISITEUR
+============================================================ */
+
+export async function enregistrerVisiteur(
+    id,
+    donnees
+) {
+
+    if (!id) {
+
+        throw new Error(
+            "ID du visiteur manquant."
+        );
+    }
+
+
+    await setDoc(
+
+        doc(
+            db,
+            VISITEURS,
+            id
+        ),
+
+        {
+
+            ...donnees,
+
+            modifieLe:
+                serverTimestamp()
+
+        }
+
+    );
+
+
+    return true;
+}
+
+
+/* ============================================================
+   SURVEILLER CONNEXION
+============================================================ */
+
+export function surveillerConnexion(
+    callback
+) {
+
+    return onAuthStateChanged(
+        auth,
+        callback
+    );
+}
+
+
+/* ============================================================
+   VERIFICATION FIREBASE
+============================================================ */
+
+export function firebasePret() {
+
+    return {
+
+        auth:
+            Boolean(auth),
+
+        db:
+            Boolean(db),
+
+        secondaryAuth:
+            Boolean(secondaryAuth)
+
+    };
+}
+
+
+
+import {
+    creerCompte,
+    chargerComptes,
+    modifierCompte,
+    supprimerCompte,
+    compteConnecte
+} from "./bpr-firebase.js";
 
 // ======================================================
 
@@ -2008,7 +3128,7 @@ const BUHUMUZA = {
             "Gakonk(o)",
 
             "Kivumu",
-
+            
             "Mpungwe",
 
             "Mugege",
@@ -9382,7 +10502,7 @@ const dataAdministrative = {
     "BUTANYERERA": BUTANYERERA
 
 };
-window.bprDataAdministrative = dataAdministrative;
+
 
 
 // ======================================================
@@ -9427,77 +10547,115 @@ const collineUtilisateur =
 
 
 
-function normaliserCleAdmin(valeur) {
-    return String(valeur ?? "")
-        .trim()
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .toUpperCase();
-}
-
-function trouverCleAdmin(objet, recherche) {
-    if (!objet || typeof objet !== "object") return null;
-    const cible = normaliserCleAdmin(recherche);
-    return Object.keys(objet).find(
-        cle => normaliserCleAdmin(cle) === cible
-    ) || null;
-}
-
-// ======================================================
-// 5. CHARGER COMMUNES
-// ======================================================
-
 function chargerCommunes() {
+
+
+
     if (!provinceUtilisateur || !communeUtilisateur) return;
+
+
 
     const province = provinceUtilisateur.value;
 
+
+
     communeUtilisateur.innerHTML =
+
         '<option value="">Sélectionner une commune</option>';
-    communeUtilisateur.disabled = true;
+
+
 
     if (zoneUtilisateur) {
+
         zoneUtilisateur.innerHTML =
+
             '<option value="">Sélectionner une zone</option>';
+
+
+
         zoneUtilisateur.disabled = true;
+
     }
 
+
+
     if (collineUtilisateur) {
+
         collineUtilisateur.innerHTML =
+
             '<option value="">Sélectionner une colline / quartier</option>';
+
+
+
         collineUtilisateur.disabled = true;
+
     }
+
+
+
+    communeUtilisateur.disabled = true;
+
+
 
     if (!province) return;
 
-    // Les communes viennent directement de COMMUNES_PAR_PROVINCE.
-    // On ne dépend donc plus des clés de dataAdministrative.
-    const cleProvince = trouverCleAdmin(
-        COMMUNES_PAR_PROVINCE,
-        province
-    );
 
-    if (!cleProvince) {
-        console.error("Province introuvable dans COMMUNES_PAR_PROVINCE :", province);
+
+    const provinceKey = province.toUpperCase();
+
+
+
+    const provinceData =
+
+        dataAdministrative[provinceKey];
+
+
+
+    if (!provinceData) {
+
+        console.error(
+
+            "Province introuvable :",
+
+            provinceKey
+
+        );
+
         return;
+
     }
 
-    const communes = COMMUNES_PAR_PROVINCE[cleProvince];
 
-    if (!Array.isArray(communes)) {
-        console.error("Liste des communes invalide :", cleProvince);
-        return;
-    }
 
-    communes.forEach(commune => {
-        const option = document.createElement("option");
+    Object.keys(provinceData).forEach(commune => {
+
+
+
+        const option =
+
+            document.createElement("option");
+
+
+
         option.value = commune;
+
         option.textContent = commune;
+
+
+
         communeUtilisateur.appendChild(option);
+
     });
 
+
+
     communeUtilisateur.disabled = false;
+
 }
+
+
+
+
 
 // ======================================================
 
@@ -9508,265 +10666,354 @@ function chargerCommunes() {
 
 
 function chargerZones() {
-    if (!provinceUtilisateur || !communeUtilisateur || !zoneUtilisateur) return;
 
-    const province = provinceUtilisateur.value;
-    const commune = communeUtilisateur.value;
+
+
+    if (
+
+        !provinceUtilisateur ||
+
+        !communeUtilisateur ||
+
+        !zoneUtilisateur
+
+    ) return;
+
+
+
+    const province =
+
+        provinceUtilisateur.value;
+
+
+
+    const commune =
+
+        communeUtilisateur.value;
+
+
 
     zoneUtilisateur.innerHTML =
+
         '<option value="">Sélectionner une zone</option>';
-    zoneUtilisateur.disabled = true;
+
+
 
     if (collineUtilisateur) {
+
         collineUtilisateur.innerHTML =
+
             '<option value="">Sélectionner une colline / quartier</option>';
+
+
+
         collineUtilisateur.disabled = true;
+
     }
+
+
+
+    zoneUtilisateur.disabled = true;
+
+
 
     if (!province || !commune) return;
 
-    const cleProvince = trouverCleAdmin(dataAdministrative, province);
-    if (!cleProvince) {
-        console.error("Province introuvable dans dataAdministrative :", province);
+
+
+    const provinceKey =
+
+        province.toUpperCase();
+
+
+
+    const communeKey =
+
+        commune.toUpperCase();
+
+
+
+    const provinceData =
+
+        dataAdministrative[provinceKey];
+
+
+
+    if (!provinceData) return;
+
+
+
+    const communeData =
+
+        provinceData[communeKey];
+
+
+
+    if (!communeData) {
+
+        console.error(
+
+            "Commune introuvable :",
+
+            communeKey
+
+        );
+
         return;
+
     }
 
-    const provinceData = dataAdministrative[cleProvince];
-    const cleCommune = trouverCleAdmin(provinceData, commune);
 
-    if (!cleCommune) {
-        console.error("Commune introuvable :", commune, "dans", cleProvince);
-        return;
-    }
-
-    const communeData = provinceData[cleCommune];
-
-    if (!communeData || typeof communeData !== "object") {
-        console.error("Données de commune invalides :", cleCommune);
-        return;
-    }
 
     Object.keys(communeData).forEach(zone => {
-        const option = document.createElement("option");
+
+
+
+        const option =
+
+            document.createElement("option");
+
+
+
         option.value = zone;
+
         option.textContent = zone;
+
+
+
         zoneUtilisateur.appendChild(option);
+
     });
 
+
+
     zoneUtilisateur.disabled = false;
+
 }
 
+
+
+
+
 // ======================================================
+
 // 7. CHARGER COLLINES / QUARTIERS
+
 // ======================================================
+
+
 
 function chargerCollines() {
-    if (!provinceUtilisateur || !communeUtilisateur ||
-        !zoneUtilisateur || !collineUtilisateur) return;
 
-    const province = provinceUtilisateur.value;
-    const commune = communeUtilisateur.value;
-    const zone = zoneUtilisateur.value;
+
+
+    if (
+
+        !provinceUtilisateur ||
+
+        !communeUtilisateur ||
+
+        !zoneUtilisateur ||
+
+        !collineUtilisateur
+
+    ) return;
+
+
+
+    const province =
+
+        provinceUtilisateur.value;
+
+
+
+    const commune =
+
+        communeUtilisateur.value;
+
+
+
+    const zone =
+
+        zoneUtilisateur.value;
+
+
 
     collineUtilisateur.innerHTML =
+
         '<option value="">Sélectionner une colline / quartier</option>';
+
+
+
     collineUtilisateur.disabled = true;
+
+
 
     if (!province || !commune || !zone) return;
 
-    const cleProvince = trouverCleAdmin(dataAdministrative, province);
-    if (!cleProvince) return;
 
-    const provinceData = dataAdministrative[cleProvince];
-    const cleCommune = trouverCleAdmin(provinceData, commune);
 
-    if (!cleCommune) return;
+    const provinceKey =
 
-    const communeData = provinceData[cleCommune];
-    const cleZone = trouverCleAdmin(communeData, zone);
+        province.toUpperCase();
 
-    if (!cleZone) {
-        console.error("Zone introuvable :", zone);
-        return;
-    }
 
-    const collines = communeData[cleZone];
 
-    if (!Array.isArray(collines)) return;
+    const communeKey =
+
+        commune.toUpperCase();
+
+
+
+    const provinceData =
+
+        dataAdministrative[provinceKey];
+
+
+
+    if (!provinceData) return;
+
+
+
+    const communeData =
+
+        provinceData[communeKey];
+
+
+
+    if (!communeData) return;
+
+
+
+    const collines =
+
+        communeData[zone] || [];
+
+
 
     collines.forEach(colline => {
-        const option = document.createElement("option");
+
+
+
+        const option =
+
+            document.createElement("option");
+
+
+
         option.value = colline;
+
         option.textContent = colline;
+
+
+
         collineUtilisateur.appendChild(option);
+
     });
 
+
+
     collineUtilisateur.disabled = false;
+
 }
+
+
+
+
 
 // ======================================================
 
 // 8. EVENTS
 
-// ======================================================
-
-
-
-if (provinceUtilisateur) {
-
-
-
-    provinceUtilisateur.addEventListener(
-
-        "change",
-
-        chargerCommunes
-
-    );
-
-}
-
-
-
-if (communeUtilisateur) {
-
-
-
-    communeUtilisateur.addEventListener(
-
-        "change",
-
-        chargerZones
-
-    );
-
-}
-
-
-
-if (zoneUtilisateur) {
-
-
-
-    zoneUtilisateur.addEventListener(
-
-        "change",
-
-        chargerCollines
-
-    );
-
-}
-
-
-
-
-// ======================================================
-// 9. GESTION DES COMPTES — FIREBASE
-// ======================================================
-
-import { auth, db } from "./bpr-firebase.js";
-
-import {
-    createUserWithEmailAndPassword,
-    updatePassword
-} from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
-
-import {
-    collection,
-    getDocs,
-    doc,
-    setDoc,
-    updateDoc,
-    deleteDoc
-} from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
-
-
-const UTILISATEURS_KEY = "bpr_utilisateurs";
-const COLLECTION_COMPTES = "comptes";
-
-let utilisateurs = [];
-let utilisateurEnModification = null;
-
-const formCreerUtilisateur = document.getElementById("formCreerUtilisateur");
-const nomUtilisateur = document.getElementById("nomUtilisateur");
-const identifiantUtilisateur = document.getElementById("identifiantUtilisateur");
-const motDePasseUtilisateur = document.getElementById("motDePasseUtilisateur");
-const confirmationMotDePasse = document.getElementById("confirmationMotDePasse");
-const roleUtilisateur = document.getElementById("roleUtilisateur");
-const statutUtilisateur = document.getElementById("statutUtilisateur");
-const tableUtilisateurs = document.getElementById("tableUtilisateurs");
-const countUtilisateurs = document.getElementById("countUtilisateurs");
-const messageUtilisateur = document.getElementById("messageUtilisateur");
-const btnCreerUtilisateur = document.getElementById("btnCreerUtilisateur");
-const btnAnnulerModification = document.getElementById("btnAnnulerModification");
-
-
-// ======================================================
-// OUTILS FIREBASE
-// ======================================================
-
-function identifiantVersEmail(identifiant) {
-    return String(identifiant || "")
-        .trim()
-        .toLowerCase()
-        .replace(/\s+/g, "") + "@bpr.local";
-}
-
-
-function sauvegarderUtilisateurs() {
-    // Cache local uniquement pour conserver la compatibilité avec
-    // l'ancien projet. Aucun mot de passe n'est enregistré ici.
-    const sansMotDePasse = utilisateurs.map((u) => {
-        const copie = { ...u };
-        delete copie.motDePasse;
-        delete copie.confirmationMotDePasse;
-        return copie;
-    });
-
-    localStorage.setItem(
-        UTILISATEURS_KEY,
-        JSON.stringify(sansMotDePasse)
-    );
-}
-
-
-async function chargerComptesFirebase() {
-
-    try {
-        if (!auth.currentUser) {
-            utilisateurs = [];
-            afficherUtilisateurs();
-            afficherMessage(
-                "Veuillez vous connecter pour voir les comptes.",
-                "info"
-            );
-            return;
-        }
-
-        const snapshot = await getDocs(collection(db, COLLECTION_COMPTES));
-
-        utilisateurs = snapshot.docs.map((documentSnap) => ({
-            id: documentSnap.id,
-            ...documentSnap.data()
-        }));
-
-        sauvegarderUtilisateurs();
-        afficherUtilisateurs();
-
-    } catch (error) {
-        console.error("Erreur chargement comptes Firebase :", error);
-        afficherMessage(
-            "Impossible de charger les comptes depuis Firebase : " +
-            (error.message || error),
-            "erreur"
-        );
+// Cascade : Province -> Commune -> Zone -> Colline / Quartier.
+function initialiserSelecteursTerritoire() {
+    if (provinceUtilisateur && !provinceUtilisateur.dataset.bprReady) {
+        provinceUtilisateur.addEventListener("change", chargerCommunes);
+        provinceUtilisateur.dataset.bprReady = "1";
+    }
+    if (communeUtilisateur && !communeUtilisateur.dataset.bprReady) {
+        communeUtilisateur.addEventListener("change", chargerZones);
+        communeUtilisateur.dataset.bprReady = "1";
+    }
+    if (zoneUtilisateur && !zoneUtilisateur.dataset.bprReady) {
+        zoneUtilisateur.addEventListener("change", chargerCollines);
+        zoneUtilisateur.dataset.bprReady = "1";
     }
 }
 
+initialiserSelecteursTerritoire();
 
-function echapperHTML(texte) {
-    return String(texte ?? "")
+
+// 9. GESTION DES COMPTES AVEC FIREBASE
+
+// ======================================================
+
+const formCreerUtilisateur =
+    document.getElementById("formCreerUtilisateur");
+
+const nomUtilisateur =
+    document.getElementById("nomUtilisateur");
+
+const identifiantUtilisateur =
+    document.getElementById("identifiantUtilisateur");
+
+const motDePasseUtilisateur =
+    document.getElementById("motDePasseUtilisateur");
+
+const confirmationMotDePasse =
+    document.getElementById("confirmationMotDePasse");
+
+const roleUtilisateur =
+    document.getElementById("roleUtilisateur");
+
+const paysUtilisateur =
+    document.getElementById("paysUtilisateur");
+
+const statutUtilisateur =
+    document.getElementById("statutUtilisateur");
+
+const tableUtilisateurs =
+    document.getElementById("tableUtilisateurs");
+
+const countUtilisateurs =
+    document.getElementById("countUtilisateurs");
+
+const messageUtilisateur =
+    document.getElementById("messageUtilisateur");
+
+const btnCreerUtilisateur =
+    document.getElementById("btnCreerUtilisateur");
+
+const btnAnnulerModification =
+    document.getElementById("btnAnnulerModification");
+
+
+const BPR_ROLES = {
+    "Utilisateur": 1,
+    "Manager Zonal": 2,
+    "Manager Communal": 3,
+    "Manager Provincial": 4,
+    "Manager National": 5
+};
+
+
+// ======================================================
+// OUTILS
+// ======================================================
+
+function afficherMessageCompte(message, type = "info") {
+
+    if (!messageUtilisateur) return;
+
+    messageUtilisateur.textContent = message;
+    messageUtilisateur.className =
+        "message-utilisateur " + type;
+}
+
+
+function echapperCompte(valeur) {
+
+    return String(valeur ?? "")
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;")
@@ -9775,117 +11022,85 @@ function echapperHTML(texte) {
 }
 
 
-function afficherNombreComptes() {
-    if (countUtilisateurs) {
-        countUtilisateurs.textContent = utilisateurs.length;
+function messageErreurFirebase(erreur) {
+
+    const code = erreur?.code || "";
+
+    if (code === "auth/email-already-in-use") {
+        return "❌ Cet identifiant existe déjà.";
     }
-}
 
+    if (code === "auth/weak-password") {
+        return "❌ Le mot de passe doit contenir au moins 6 caractères.";
+    }
 
-function afficherMessage(message, type = "info") {
-    if (!messageUtilisateur) return;
+    if (code === "auth/invalid-email") {
+        return "❌ Identifiant invalide.";
+    }
 
-    messageUtilisateur.textContent = message;
-    messageUtilisateur.className = "message-utilisateur " + type;
+    if (code === "permission-denied") {
+        return "❌ Accès refusé par les règles Firebase.";
+    }
+
+    return erreur?.message ||
+        "❌ Une erreur est survenue.";
 }
 
 
 // ======================================================
-// CHAMPS SELON LE TYPE DE COMPTE
+// CHAMPS SELON LE RÔLE DU NOUVEAU COMPTE
 // ======================================================
 
 function gererChampsSelonRole() {
 
-    if (
-        !roleUtilisateur ||
-        !provinceUtilisateur ||
-        !communeUtilisateur ||
-        !zoneUtilisateur ||
-        !collineUtilisateur
-    ) return;
+    if (!roleUtilisateur || !provinceUtilisateur ||
+        !communeUtilisateur || !zoneUtilisateur ||
+        !collineUtilisateur) {
+        return;
+    }
 
     const role = roleUtilisateur.value;
+    const territoireLibre = role !== "Manager National";
 
-    provinceUtilisateur.disabled = true;
-    communeUtilisateur.disabled = true;
-    zoneUtilisateur.disabled = true;
-    collineUtilisateur.disabled = true;
+    // Compte territorial : sélection complète jusqu'à la colline.
+    provinceUtilisateur.disabled = !territoireLibre;
+    communeUtilisateur.disabled = !territoireLibre;
+    zoneUtilisateur.disabled = !territoireLibre;
+    collineUtilisateur.disabled = !territoireLibre;
+
+    if (paysUtilisateur) {
+        paysUtilisateur.value = "BURUNDI";
+        paysUtilisateur.disabled = false;
+    }
 
     if (role === "Manager National") {
         provinceUtilisateur.value = "";
         communeUtilisateur.value = "";
         zoneUtilisateur.value = "";
         collineUtilisateur.value = "";
-        return;
-    }
-
-    if (role === "Manager Provincial") {
-        provinceUtilisateur.disabled = false;
-        communeUtilisateur.value = "";
-        zoneUtilisateur.value = "";
-        collineUtilisateur.value = "";
-        return;
-    }
-
-    if (role === "Manager Communal") {
-        provinceUtilisateur.disabled = false;
-        communeUtilisateur.disabled = false;
-        zoneUtilisateur.value = "";
-        collineUtilisateur.value = "";
-        return;
-    }
-
-    if (role === "Manager Zonal") {
-        provinceUtilisateur.disabled = false;
-        communeUtilisateur.disabled = false;
-        zoneUtilisateur.disabled = false;
-        collineUtilisateur.value = "";
-        return;
-    }
-
-    if (role === "Utilisateur") {
-        provinceUtilisateur.disabled = false;
-        communeUtilisateur.disabled = false;
-        zoneUtilisateur.disabled = false;
-        collineUtilisateur.disabled = false;
     }
 }
 
 
 // ======================================================
-// TERRITOIRE SELON LE ROLE
+// TERRITOIRE DU NOUVEAU COMPTE
 // ======================================================
 
 function obtenirTerritoireCompte() {
 
-    const role = roleUtilisateur ? roleUtilisateur.value : "";
-
     const territoire = {
-        province: provinceUtilisateur ? provinceUtilisateur.value : "",
-        commune: communeUtilisateur ? communeUtilisateur.value : "",
-        zone: zoneUtilisateur ? zoneUtilisateur.value : "",
-        colline: collineUtilisateur ? collineUtilisateur.value : ""
+        pays: paysUtilisateur?.value || "BURUNDI",
+        province: provinceUtilisateur?.value || "",
+        commune: communeUtilisateur?.value || "",
+        zone: zoneUtilisateur?.value || "",
+        colline: collineUtilisateur?.value || ""
     };
 
-    if (role === "Manager National") {
+    if (roleUtilisateur?.value === "Manager National") {
+        territoire.pays = "BURUNDI";
         territoire.province = "";
         territoire.commune = "";
         territoire.zone = "";
-        territoire.colline = "";
-    }
-
-    if (role === "Manager Provincial") {
-        territoire.commune = "";
-        territoire.zone = "";
-        territoire.colline = "";
-    }
-
-    if (role === "Manager Communal") {
-        territoire.zone = "";
-        territoire.colline = "";
-    }
-
-    if (role === "Manager Zonal") {
         territoire.colline = "";
     }
 
@@ -9895,7 +11110,7 @@ function obtenirTerritoireCompte() {
 
 function verifierTerritoire() {
 
-    const role = roleUtilisateur ? roleUtilisateur.value : "";
+    const role = roleUtilisateur?.value || "";
     const territoire = obtenirTerritoireCompte();
 
     if (!role) {
@@ -9906,90 +11121,655 @@ function verifierTerritoire() {
         return "";
     }
 
-    if (!territoire.province) {
-        return "Veuillez sélectionner une province.";
-    }
-
-    if (
-        (role === "Manager Communal" ||
-         role === "Manager Zonal" ||
-         role === "Utilisateur") &&
-        !territoire.commune
-    ) {
-        return "Veuillez sélectionner une commune.";
-    }
-
-    if (
-        (role === "Manager Zonal" || role === "Utilisateur") &&
-        !territoire.zone
-    ) {
-        return "Veuillez sélectionner une zone.";
-    }
-
-    if (role === "Utilisateur" && !territoire.colline) {
-        return "Veuillez sélectionner une colline / quartier.";
-    }
+    if (!territoire.province) return "Veuillez sélectionner une province.";
+    if (!territoire.commune) return "Veuillez sélectionner une commune.";
+    if (!territoire.zone) return "Veuillez sélectionner une zone.";
+    if (!territoire.colline) return "Veuillez sélectionner une colline / quartier.";
 
     return "";
 }
 
 
 // ======================================================
-// AFFICHER LA LISTE DES COMPTES
+// COMPTE CONNECTÉ
 // ======================================================
 
-function afficherUtilisateurs() {
+function normaliserRoleBPR(role) {
+    return String(role || "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .trim()
+        .replace(/\s+/g, " ")
+        .toLowerCase();
+}
 
-    if (!tableUtilisateurs) {
-        afficherNombreComptes();
+function roleCanoniqueBPR(role) {
+    const r = normaliserRoleBPR(role);
+
+    const roles = {
+        "utilisateur": "Utilisateur",
+        "manager zonal": "Manager Zonal",
+        "manager communal": "Manager Communal",
+        "manager provincial": "Manager Provincial",
+        "manager national": "Manager National"
+    };
+
+    return roles[r] || "";
+}
+
+function lireSessionLocaleBPR() {
+    const cles = [
+        "BPR_COMPTE_CONNECTE",
+        "bpr_current_user",
+        "bpr_manager_connecte"
+    ];
+
+    for (const cle of cles) {
+        try {
+            const valeur = localStorage.getItem(cle);
+            if (!valeur) continue;
+
+            const objet = JSON.parse(valeur);
+            if (objet && typeof objet === "object") {
+                return objet;
+            }
+        } catch (erreur) {
+            console.warn("Session locale invalide :", erreur);
+        }
+    }
+
+    return null;
+}
+
+async function obtenirCompteCreateur() {
+    let compte = null;
+
+    // Firebase est prioritaire.
+    try {
+        compte = await compteConnecte();
+    } catch (erreur) {
+        console.warn("Session Firebase :", erreur);
+    }
+
+    // Fallback local si Firebase n'est pas encore prêt.
+    if (!compte) {
+        compte = lireSessionLocaleBPR();
+    }
+
+    if (!compte) {
+        return null;
+    }
+
+    const role = roleCanoniqueBPR(
+        compte.role ||
+        compte.roleUtilisateur ||
+        compte.userRole ||
+        localStorage.getItem("userRole") ||
+        ""
+    );
+
+    if (!role) {
+        console.error("Rôle BPR introuvable dans le compte connecté.", compte);
+        return null;
+    }
+
+    compte.role = role;
+
+    // Garantit les territoires même pour une ancienne session.
+    compte.pays = compte.pays || localStorage.getItem("userPays") || "BURUNDI";
+    compte.province = compte.province || localStorage.getItem("userProvince") || "";
+    compte.commune = compte.commune || localStorage.getItem("userCommune") || "";
+    compte.zone = compte.zone || localStorage.getItem("userZone") || "";
+    compte.colline = compte.colline || localStorage.getItem("userColline") || "";
+
+    localStorage.setItem(
+        "BPR_COMPTE_CONNECTE",
+        JSON.stringify(compte)
+    );
+
+    return compte;
+}
+
+// ======================================================
+// AUTORISATION DE CRÉER UN RÔLE
+// ======================================================
+
+function peutCreerRole(
+    roleCreateur,
+    roleNouveau
+) {
+    const createur = roleCanoniqueBPR(roleCreateur);
+    const nouveau = roleCanoniqueBPR(roleNouveau);
+
+    // Le Manager National peut créer TOUS les types de comptes.
+    if (createur === "Manager National") {
+        return [
+            "Utilisateur",
+            "Manager Zonal",
+            "Manager Communal",
+            "Manager Provincial",
+            "Manager National"
+        ].includes(nouveau);
+    }
+
+    const niveauCreateur = BPR_ROLES[createur] || 0;
+    const niveauNouveau = BPR_ROLES[nouveau] || 0;
+
+    if (!niveauCreateur || !niveauNouveau) {
+        return false;
+    }
+
+    return niveauNouveau < niveauCreateur;
+}
+
+
+// ======================================================
+// AUTORISATION TERRITORIALE
+// ======================================================
+
+function territoireAutorise(
+    donnees,
+    createur
+) {
+    if (!createur) {
+        return false;
+    }
+
+    const role = roleCanoniqueBPR(
+        createur.role ||
+        createur.roleUtilisateur ||
+        createur.userRole
+    );
+
+    // MANAGER NATIONAL : accès à tout le Burundi.
+    if (role === "Manager National") {
+        return true;
+    }
+
+    const provinceCreateur = String(createur.province || "").trim();
+    const communeCreateur = String(createur.commune || "").trim();
+    const zoneCreateur = String(createur.zone || "").trim();
+
+    const province = String(donnees.province || "").trim();
+    const commune = String(donnees.commune || "").trim();
+    const zone = String(donnees.zone || "").trim();
+
+    if (role === "Manager Provincial") {
+        return province === provinceCreateur;
+    }
+
+    if (role === "Manager Communal") {
+        return (
+            province === provinceCreateur &&
+            commune === communeCreateur
+        );
+    }
+
+    if (role === "Manager Zonal") {
+        return (
+            province === provinceCreateur &&
+            commune === communeCreateur &&
+            zone === zoneCreateur
+        );
+    }
+
+    return false;
+}
+
+
+// ======================================================
+// CRÉER LE COMPTE
+// ======================================================
+
+async function creerUtilisateurFirebase() {
+
+    const message =
+        messageUtilisateur;
+
+    const bouton =
+        btnCreerUtilisateur;
+
+
+    const donnees = {
+
+        nomUtilisateur:
+            nomUtilisateur?.value.trim() || "",
+
+        identifiant:
+            identifiantUtilisateur?.value.trim() || "",
+
+        motDePasse:
+            motDePasseUtilisateur?.value || "",
+
+        confirmation:
+            confirmationMotDePasse?.value || "",
+
+        role:
+            roleUtilisateur?.value || "",
+
+        statut:
+            statutUtilisateur?.value ||
+            "Actif",
+
+        ...obtenirTerritoireCompte()
+
+    };
+
+
+    if (
+        !donnees.nomUtilisateur ||
+        !donnees.identifiant ||
+        !donnees.motDePasse ||
+        !donnees.confirmation ||
+        !donnees.role
+    ) {
+
+        afficherMessageCompte(
+            "⚠️ Veuillez remplir tous les champs obligatoires.",
+            "erreur"
+        );
+
         return;
     }
 
-    tableUtilisateurs.innerHTML = "";
 
-    if (utilisateurs.length === 0) {
-        tableUtilisateurs.innerHTML = `
-            <tr>
-                <td colspan="10" style="text-align:center;">
-                    Aucun compte enregistré
+    if (
+        donnees.motDePasse.length < 6
+    ) {
+
+        afficherMessageCompte(
+            "❌ Le mot de passe doit contenir au moins 6 caractères.",
+            "erreur"
+        );
+
+        return;
+    }
+
+
+    if (
+        donnees.motDePasse !==
+        donnees.confirmation
+    ) {
+
+        afficherMessageCompte(
+            "❌ Les mots de passe ne correspondent pas.",
+            "erreur"
+        );
+
+        return;
+    }
+
+
+    const erreurTerritoire =
+        verifierTerritoire();
+
+
+    if (erreurTerritoire) {
+
+        afficherMessageCompte(
+            "❌ " + erreurTerritoire,
+            "erreur"
+        );
+
+        return;
+    }
+
+
+    if (bouton) {
+
+        bouton.disabled = true;
+        bouton.textContent =
+            "⏳ Création...";
+
+    }
+
+
+    try {
+
+        const createur =
+            await obtenirCompteCreateur();
+
+
+        if (!createur) {
+
+            throw new Error(
+                "Aucun compte BPR connecté. Connectez-vous d'abord."
+            );
+        }
+
+
+        const roleCreateur =
+            roleCanoniqueBPR(createur.role);
+
+        const roleNouveau =
+            roleCanoniqueBPR(donnees.role);
+
+        if (!roleCreateur) {
+            throw new Error(
+                "Le rôle du compte connecté est introuvable."
+            );
+        }
+
+        if (!roleNouveau) {
+            throw new Error(
+                "Le rôle du nouveau compte est invalide."
+            );
+        }
+
+        if (
+            !peutCreerRole(
+                roleCreateur,
+                roleNouveau
+            )
+        ) {
+            throw new Error(
+                "Vous n'avez pas l'autorisation de créer ce type de compte."
+            );
+        }
+
+
+        if (
+            !territoireAutorise(
+                donnees,
+                createur
+            )
+        ) {
+
+            throw new Error(
+                "Ce territoire n'est pas autorisé pour votre compte."
+            );
+        }
+
+
+        const resultat =
+            await creerCompte({
+
+                nomUtilisateur:
+                    donnees.nomUtilisateur,
+
+                identifiant:
+                    donnees.identifiant,
+
+                motDePasse:
+                    donnees.motDePasse,
+
+                role:
+                    donnees.role,
+
+                statut:
+                    donnees.statut,
+
+                province:
+                    donnees.province,
+
+                commune:
+                    donnees.commune,
+
+                zone:
+                    donnees.zone,
+
+                colline:
+                    donnees.colline,
+
+                creeParUid:
+                    createur.uid || "",
+
+                creePar:
+                    createur.nomUtilisateur ||
+                    createur.nom ||
+                    createur.identifiant ||
+                    "Administrateur",
+
+                creeParRole:
+                    createur.role || ""
+
+            });
+
+
+        if (!resultat?.success) {
+
+            throw new Error(
+                "La création du compte a échoué."
+            );
+        }
+
+
+        afficherMessageCompte(
+            "✅ Compte créé avec succès.",
+            "succes"
+        );
+
+
+        if (formCreerUtilisateur) {
+            formCreerUtilisateur.reset();
+        }
+
+
+        gererChampsSelonRole();
+
+
+        await afficherComptesFirebase();
+
+
+    } catch (erreur) {
+
+        console.error(
+            "Erreur création compte :",
+            erreur
+        );
+
+
+        afficherMessageCompte(
+            messageErreurFirebase(erreur),
+            "erreur"
+        );
+
+    } finally {
+
+        if (bouton) {
+
+            bouton.disabled = false;
+
+            bouton.textContent =
+                "Créer le compte";
+
+        }
+
+    }
+}
+
+
+// ======================================================
+// AFFICHER LES COMPTES FIREBASE
+// ======================================================
+
+async function afficherComptesFirebase() {
+
+    try {
+
+        const comptes =
+            await chargerComptes();
+
+
+        const element =
+            document.getElementById(
+                "tableUtilisateurs"
+            );
+
+
+        if (!element) {
+            return;
+        }
+
+
+        let tbody;
+
+
+        if (
+            element.tagName &&
+            element.tagName.toLowerCase() ===
+            "table"
+        ) {
+
+            tbody =
+                element.querySelector("tbody");
+
+
+            if (!tbody) {
+
+                tbody =
+                    document.createElement("tbody");
+
+                element.appendChild(tbody);
+            }
+
+        } else {
+
+            // Si tableUtilisateurs est déjà un <tbody>.
+            tbody = element;
+        }
+
+
+        tbody.innerHTML = "";
+
+
+        if (countUtilisateurs) {
+
+            countUtilisateurs.textContent =
+                comptes.length;
+
+        }
+
+
+        if (!comptes.length) {
+
+            const ligne =
+                document.createElement("tr");
+
+            ligne.innerHTML = `
+                <td colspan="10"
+                    style="text-align:center;">
+                    Aucun compte enregistré.
                 </td>
-            </tr>
-        `;
+            `;
 
-        afficherNombreComptes();
-        return;
+            tbody.appendChild(ligne);
+
+            return;
+        }
+
+
+        comptes.forEach(compte => {
+
+            const ligne =
+                document.createElement("tr");
+
+
+            const id =
+                echapperCompte(compte.id);
+
+
+            ligne.innerHTML = `
+
+                <td>
+                    ${echapperCompte(
+                        compte.nomUtilisateur
+                    )}
+                </td>
+
+                <td>
+                    ${echapperCompte(
+                        compte.identifiant
+                    )}
+                </td>
+
+                <td>
+                    ${echapperCompte(
+                        compte.role
+                    )}
+                </td>
+
+                <td>
+                    ${echapperCompte(
+                        compte.province || "-"
+                    )}
+                </td>
+
+                <td>
+                    ${echapperCompte(
+                        compte.commune || "-"
+                    )}
+                </td>
+
+                <td>
+                    ${echapperCompte(
+                        compte.zone || "-"
+                    )}
+                </td>
+
+                <td>
+                    ${echapperCompte(
+                        compte.colline || "-"
+                    )}
+                </td>
+
+                <td>
+                    ${echapperCompte(
+                        compte.statut || "Actif"
+                    )}
+                </td>
+
+                <td>
+                    ${echapperCompte(
+                        compte.creePar || "-"
+                    )}
+                </td>
+
+                <td class="actions">
+
+                    <button
+                        type="button"
+                        class="btn-voir"
+                        onclick="bprVoirCompte('${id}')">
+                        👁️ Voir
+                    </button>
+
+                    <button
+                        type="button"
+                        class="btn-modifier"
+                        onclick="bprModifierCompte('${id}')">
+                        ✏️ Modifier
+                    </button>
+
+                    <button
+                        type="button"
+                        class="btn-supprimer"
+                        onclick="bprSupprimerCompte('${id}')">
+                        🗑️ Supprimer
+                    </button>
+
+                </td>
+            `;
+
+
+            tbody.appendChild(ligne);
+
+        });
+
+
+    } catch (erreur) {
+
+        console.error(
+            "Erreur chargement comptes :",
+            erreur
+        );
+
+
+        afficherMessageCompte(
+            messageErreurFirebase(erreur),
+            "erreur"
+        );
     }
-
-    utilisateurs.forEach((utilisateur, index) => {
-
-        const tr = document.createElement("tr");
-
-        tr.innerHTML = `
-            <td>${echapperHTML(utilisateur.nom)}</td>
-            <td>${echapperHTML(utilisateur.identifiant)}</td>
-            <td>${echapperHTML(utilisateur.role)}</td>
-            <td>${echapperHTML(utilisateur.province || "-")}</td>
-            <td>${echapperHTML(utilisateur.commune || "-")}</td>
-            <td>${echapperHTML(utilisateur.zone || "-")}</td>
-            <td>${echapperHTML(utilisateur.colline || "-")}</td>
-            <td>${echapperHTML(utilisateur.statut || "Actif")}</td>
-            <td class="actions">
-                <button type="button" class="btn-voir" onclick="voirUtilisateur(${index})">
-                    👁️ Voir
-                </button>
-                <button type="button" class="btn-modifier" onclick="modifierUtilisateur(${index})">
-                    ✏️ Modifier
-                </button>
-                <button type="button" class="btn-supprimer" onclick="supprimerUtilisateur(${index})">
-                    🗑️ Supprimer
-                </button>
-            </td>
-        `;
-
-        tableUtilisateurs.appendChild(tr);
-    });
-
-    afficherNombreComptes();
 }
 
 
@@ -9997,384 +11777,309 @@ function afficherUtilisateurs() {
 // VOIR UN COMPTE
 // ======================================================
 
-function voirUtilisateur(index) {
+async function bprVoirCompte(id) {
 
-    const utilisateur = utilisateurs[index];
+    try {
 
-    if (!utilisateur) return;
+        const comptes =
+            await chargerComptes();
 
-    alert(
-        "INFORMATIONS DU COMPTE\n\n" +
-        "Nom : " + (utilisateur.nom || "-") + "\n" +
-        "Identifiant : " + (utilisateur.identifiant || "-") + "\n" +
-        "Rôle : " + (utilisateur.role || "-") + "\n" +
-        "Province : " + (utilisateur.province || "-") + "\n" +
-        "Commune : " + (utilisateur.commune || "-") + "\n" +
-        "Zone : " + (utilisateur.zone || "-") + "\n" +
-        "Colline / Quartier : " + (utilisateur.colline || "-") + "\n" +
-        "Statut : " + (utilisateur.statut || "-") + "\n" +
-        "Créé par : " + (utilisateur.creeParNom || utilisateur.creePar || "-")
-    );
+
+        const compte =
+            comptes.find(
+                element =>
+                    element.id === id
+            );
+
+
+        if (!compte) {
+
+            alert(
+                "Compte introuvable."
+            );
+
+            return;
+        }
+
+
+        alert(
+            "👤 INFORMATIONS DU COMPTE\n\n" +
+
+            "Nom : " +
+            (compte.nomUtilisateur || "-") +
+
+            "\n\nIdentifiant : " +
+            (compte.identifiant || "-") +
+
+            "\n\nRôle : " +
+            (compte.role || "-") +
+
+            "\n\nStatut : " +
+            (compte.statut || "-") +
+
+            "\n\nProvince : " +
+            (compte.province || "-") +
+
+            "\n\nCommune : " +
+            (compte.commune || "-") +
+
+            "\n\nZone : " +
+            (compte.zone || "-") +
+
+            "\n\nColline : " +
+            (compte.colline || "-") +
+
+            "\n\nCréé par : " +
+            (compte.creePar || "-")
+        );
+
+
+    } catch (erreur) {
+
+        console.error(
+            "Erreur affichage compte :",
+            erreur
+        );
+
+        alert(
+            messageErreurFirebase(erreur)
+        );
+    }
 }
 
 
 // ======================================================
-// CREER / MODIFIER UN COMPTE AVEC FIREBASE
+// MODIFIER UN COMPTE
 // ======================================================
 
-async function creerUtilisateur(event) {
+async function bprModifierCompte(id) {
 
-    if (event) event.preventDefault();
+    try {
 
-    if (!nomUtilisateur || !identifiantUtilisateur || !roleUtilisateur) {
-        return;
-    }
+        const comptes =
+            await chargerComptes();
 
-    const nom = nomUtilisateur.value.trim();
-    const identifiant = identifiantUtilisateur.value.trim();
-    const motDePasse = motDePasseUtilisateur ? motDePasseUtilisateur.value : "";
-    const confirmation = confirmationMotDePasse ? confirmationMotDePasse.value : "";
-    const role = roleUtilisateur.value;
 
-    if (!nom || !identifiant || !role) {
-        afficherMessage("Veuillez remplir les champs obligatoires.", "erreur");
-        return;
-    }
+        const compte =
+            comptes.find(
+                element =>
+                    element.id === id
+            );
 
-    if (!motDePasse) {
-        afficherMessage("Veuillez saisir un mot de passe.", "erreur");
-        return;
-    }
 
-    if (motDePasse.length < 6) {
-        afficherMessage("Le mot de passe doit contenir au moins 6 caractères.", "erreur");
-        return;
-    }
+        if (!compte) {
 
-    if (motDePasse !== confirmation) {
-        afficherMessage("Les mots de passe ne correspondent pas.", "erreur");
-        return;
-    }
+            alert(
+                "Compte introuvable."
+            );
 
-    const erreurTerritoire = verifierTerritoire();
-
-    if (erreurTerritoire) {
-        afficherMessage(erreurTerritoire, "erreur");
-        return;
-    }
-
-    const identifiantExiste = utilisateurs.some((u, index) =>
-        u.identifiant === identifiant && index !== utilisateurEnModification
-    );
-
-    if (identifiantExiste) {
-        afficherMessage("Cet identifiant existe déjà.", "erreur");
-        return;
-    }
-
-    const territoire = obtenirTerritoireCompte();
-    const statut = statutUtilisateur ? statutUtilisateur.value || "Actif" : "Actif";
-
-    // --------------------------------------------------
-    // MODIFICATION D'UN COMPTE EXISTANT
-    // --------------------------------------------------
-
-    if (utilisateurEnModification !== null) {
-
-        const ancien = utilisateurs[utilisateurEnModification];
-
-        if (!ancien || !ancien.id) {
-            afficherMessage("Identifiant Firebase du compte introuvable.", "erreur");
             return;
         }
 
-        try {
-            const compteRef = doc(db, COLLECTION_COMPTES, ancien.id);
 
-            const donneesModification = {
-                nom,
-                identifiant,
-                role,
-                province: territoire.province,
-                commune: territoire.commune,
-                zone: territoire.zone,
-                colline: territoire.colline,
-                statut,
-                modifieLe: new Date().toISOString()
-            };
+        const nom =
+            prompt(
+                "Nom de l'utilisateur :",
+                compte.nomUtilisateur || ""
+            );
 
-            await updateDoc(compteRef, donneesModification);
 
-            // Firebase Authentication conserve le mot de passe.
-            // La modification du mot de passe sera faite séparément
-            // quand nous ajouterons cette fonction à l'espace compte.
+        if (nom === null) {
+            return;
+        }
 
-            utilisateurEnModification = null;
+
+        const statut =
+            prompt(
+                "Statut :",
+                compte.statut || "Actif"
+            );
+
+
+        if (statut === null) {
+            return;
+        }
+
+
+        await modifierCompte(
+            id,
+            {
+
+                nomUtilisateur:
+                    nom.trim(),
+
+                role:
+                    compte.role || "",
+
+                statut:
+                    statut.trim(),
+
+                province:
+                    compte.province || "",
+
+                commune:
+                    compte.commune || "",
+
+                zone:
+                    compte.zone || "",
+
+                colline:
+                    compte.colline || ""
+
+            }
+        );
+
+
+        alert(
+            "✅ Compte modifié avec succès."
+        );
+
+
+        await afficherComptesFirebase();
+
+
+    } catch (erreur) {
+
+        console.error(
+            "Erreur modification :",
+            erreur
+        );
+
+        alert(
+            messageErreurFirebase(erreur)
+        );
+    }
+}
+
+
+// ======================================================
+// SUPPRIMER UN COMPTE
+// ======================================================
+
+async function bprSupprimerCompte(id) {
+
+    try {
+
+        const confirmation =
+            confirm(
+                "Voulez-vous vraiment supprimer ce compte ?"
+            );
+
+
+        if (!confirmation) {
+            return;
+        }
+
+
+        await supprimerCompte(id);
+
+
+        alert(
+            "✅ Compte supprimé de la liste Firestore."
+        );
+
+
+        await afficherComptesFirebase();
+
+
+    } catch (erreur) {
+
+        console.error(
+            "Erreur suppression :",
+            erreur
+        );
+
+        alert(
+            messageErreurFirebase(erreur)
+        );
+    }
+}
+
+
+// ======================================================
+// BOUTONS HTML
+// ======================================================
+
+window.bprVoirCompte =
+    bprVoirCompte;
+
+window.bprModifierCompte =
+    bprModifierCompte;
+
+window.bprSupprimerCompte =
+    bprSupprimerCompte;
+
+window.afficherComptesFirebase =
+    afficherComptesFirebase;
+
+window.creerUtilisateur =
+    creerUtilisateurFirebase;
+
+
+// ======================================================
+// EVENTS
+// ======================================================
+
+// IMPORTANT : un seul submit listener.
+// L'ancien listener localStorage a été supprimé.
+
+if (formCreerUtilisateur) {
+
+    formCreerUtilisateur.addEventListener(
+        "submit",
+        async function(event) {
+
+            event.preventDefault();
+
+            await creerUtilisateurFirebase();
+
+        }
+    );
+}
+
+
+if (roleUtilisateur) {
+
+    roleUtilisateur.addEventListener(
+        "change",
+        gererChampsSelonRole
+    );
+}
+
+
+if (btnAnnulerModification) {
+
+    btnAnnulerModification.addEventListener(
+        "click",
+        function(event) {
+
+            event.preventDefault();
+
+            if (formCreerUtilisateur) {
+                formCreerUtilisateur.reset();
+            }
 
             if (btnCreerUtilisateur) {
-                btnCreerUtilisateur.textContent = "Créer le compte";
+                btnCreerUtilisateur.textContent =
+                    "Créer le compte";
             }
 
             if (btnAnnulerModification) {
-                btnAnnulerModification.style.display = "none";
+                btnAnnulerModification.style.display =
+                    "none";
             }
 
-            afficherMessage("Compte modifié avec succès dans Firebase.", "succes");
+            gererChampsSelonRole();
 
-            nettoyerFormulaire();
-            await chargerComptesFirebase();
-
-        } catch (error) {
-            console.error("Erreur modification compte :", error);
-            afficherMessage(
-                "Erreur Firebase lors de la modification : " +
-                (error.message || error),
-                "erreur"
+            afficherMessageCompte(
+                "Modification annulée.",
+                "info"
             );
         }
-
-        return;
-    }
-
-
-    // --------------------------------------------------
-    // CREATION DANS FIREBASE AUTHENTICATION
-    // --------------------------------------------------
-
-    const emailFirebase = identifiantVersEmail(identifiant);
-
-    try {
-
-        if (!auth.currentUser) {
-            afficherMessage(
-                "Vous devez être connecté avant de créer un compte.",
-                "erreur"
-            );
-            return;
-        }
-
-        const createur = auth.currentUser;
-
-        afficherMessage("Création du compte dans Firebase...", "info");
-
-        const resultat = await createUserWithEmailAndPassword(
-            auth,
-            emailFirebase,
-            motDePasse
-        );
-
-        const nouveauUser = resultat.user;
-
-        // --------------------------------------------------
-        // FIRESTORE : comptes / UID
-        // --------------------------------------------------
-
-        const donneesCompte = {
-            uid: nouveauUser.uid,
-            nom,
-            identifiant,
-            role,
-            province: territoire.province,
-            commune: territoire.commune,
-            zone: territoire.zone,
-            colline: territoire.colline,
-            statut,
-            emailFirebase,
-            creePar: createur.uid,
-            creeParNom: createur.email || "Utilisateur connecté",
-            creeLe: new Date().toISOString()
-        };
-
-        await setDoc(
-            doc(db, COLLECTION_COMPTES, nouveauUser.uid),
-            donneesCompte
-        );
-
-        afficherMessage("Compte créé avec succès dans Firebase.", "succes");
-
-        utilisateurEnModification = null;
-
-        if (btnCreerUtilisateur) {
-            btnCreerUtilisateur.textContent = "Créer le compte";
-        }
-
-        if (btnAnnulerModification) {
-            btnAnnulerModification.style.display = "none";
-        }
-
-        nettoyerFormulaire();
-        await chargerComptesFirebase();
-
-    } catch (error) {
-
-        console.error("Erreur création compte Firebase :", error);
-
-        let message = error.message || "Une erreur est survenue.";
-
-        if (error.code === "auth/email-already-in-use") {
-            message = "Cet identifiant existe déjà dans Firebase Authentication.";
-        } else if (error.code === "auth/weak-password") {
-            message = "Le mot de passe doit contenir au moins 6 caractères.";
-        } else if (error.code === "auth/invalid-email") {
-            message = "Identifiant invalide.";
-        } else if (error.code === "permission-denied") {
-            message = "Firebase refuse l'enregistrement. Vérifiez les Security Rules Firestore.";
-        }
-
-        afficherMessage(message, "erreur");
-    }
-}
-
-
-async function modifierUtilisateur(index) {
-
-    const utilisateur = utilisateurs[index];
-
-    if (!utilisateur) return;
-
-    utilisateurEnModification = index;
-
-    if (nomUtilisateur) nomUtilisateur.value = utilisateur.nom || "";
-    if (identifiantUtilisateur) identifiantUtilisateur.value = utilisateur.identifiant || "";
-    if (motDePasseUtilisateur) motDePasseUtilisateur.value = "";
-    if (confirmationMotDePasse) confirmationMotDePasse.value = "";
-    if (roleUtilisateur) roleUtilisateur.value = utilisateur.role || "";
-    if (statutUtilisateur) statutUtilisateur.value = utilisateur.statut || "Actif";
-
-    gererChampsSelonRole();
-
-    if (utilisateur.province && provinceUtilisateur) {
-        provinceUtilisateur.value = utilisateur.province;
-        chargerCommunes();
-    }
-
-    if (utilisateur.commune && communeUtilisateur) {
-        communeUtilisateur.value = utilisateur.commune;
-        chargerZones();
-    }
-
-    if (utilisateur.zone && zoneUtilisateur) {
-        zoneUtilisateur.value = utilisateur.zone;
-        chargerCollines();
-    }
-
-    if (utilisateur.colline && collineUtilisateur) {
-        collineUtilisateur.value = utilisateur.colline;
-    }
-
-    if (btnCreerUtilisateur) {
-        btnCreerUtilisateur.textContent = "Enregistrer les modifications";
-    }
-
-    if (btnAnnulerModification) {
-        btnAnnulerModification.style.display = "inline-block";
-    }
-
-    afficherMessage("Modification du compte en cours...", "info");
-}
-
-
-async function supprimerUtilisateur(index) {
-
-    const utilisateur = utilisateurs[index];
-
-    if (!utilisateur || !utilisateur.id) return;
-
-    const confirmer = confirm(
-        "Voulez-vous supprimer le compte de " +
-        (utilisateur.nom || utilisateur.identifiant) + " ?"
     );
 
-    if (!confirmer) return;
-
-    try {
-
-        await deleteDoc(
-            doc(db, COLLECTION_COMPTES, utilisateur.id)
-        );
-
-        // IMPORTANT : cette suppression supprime le profil Firestore.
-        // La suppression de l'utilisateur Firebase Authentication
-        // sera sécurisée séparément avec un mécanisme administrateur.
-
-        afficherMessage("Compte supprimé de Firestore.", "succes");
-
-        await chargerComptesFirebase();
-
-    } catch (error) {
-        console.error("Erreur suppression compte :", error);
-        afficherMessage(
-            "Erreur Firebase lors de la suppression : " +
-            (error.message || error),
-            "erreur"
-        );
-    }
-}
-
-
-function annulerModification() {
-
-    utilisateurEnModification = null;
-
-    nettoyerFormulaire();
-
-    if (btnCreerUtilisateur) {
-        btnCreerUtilisateur.textContent = "Créer le compte";
-    }
-
-    if (btnAnnulerModification) {
-        btnAnnulerModification.style.display = "none";
-    }
-
-    afficherMessage("Modification annulée.", "info");
-}
-
-
-function nettoyerFormulaire() {
-
-    if (formCreerUtilisateur) {
-        formCreerUtilisateur.reset();
-    }
-
-    if (provinceUtilisateur) provinceUtilisateur.value = "";
-
-    if (communeUtilisateur) {
-        communeUtilisateur.innerHTML =
-            '<option value="">Sélectionner une commune</option>';
-        communeUtilisateur.disabled = true;
-    }
-
-    if (zoneUtilisateur) {
-        zoneUtilisateur.innerHTML =
-            '<option value="">Sélectionner une zone</option>';
-        zoneUtilisateur.disabled = true;
-    }
-
-    if (collineUtilisateur) {
-        collineUtilisateur.innerHTML =
-            '<option value="">Sélectionner une colline / quartier</option>';
-        collineUtilisateur.disabled = true;
-    }
-
-    gererChampsSelonRole();
-}
-
-
-// ======================================================
-// EVENTS COMPTES
-// ======================================================
-
-if (formCreerUtilisateur) {
-    formCreerUtilisateur.addEventListener("submit", creerUtilisateur);
-}
-
-if (roleUtilisateur) {
-    roleUtilisateur.addEventListener("change", gererChampsSelonRole);
-}
-
-if (btnAnnulerModification) {
-    btnAnnulerModification.addEventListener("click", annulerModification);
-    btnAnnulerModification.style.display = "none";
+    btnAnnulerModification.style.display =
+        "none";
 }
 
 
@@ -10382,21 +12087,15 @@ if (btnAnnulerModification) {
 // INITIALISATION
 // ======================================================
 
-document.addEventListener("DOMContentLoaded", function () {
-    gererChampsSelonRole();
+document.addEventListener(
+    "DOMContentLoaded",
+    async function() {
 
-    if (auth.currentUser) {
-        chargerComptesFirebase();
-    } else {
-        afficherUtilisateurs();
+        gererChampsSelonRole();
+
+        await afficherComptesFirebase();
+
     }
-});
+);
 
 
-// Fonctions accessibles depuis les boutons HTML
-window.creerUtilisateur = creerUtilisateur;
-window.voirUtilisateur = voirUtilisateur;
-window.modifierUtilisateur = modifierUtilisateur;
-window.supprimerUtilisateur = supprimerUtilisateur;
-window.annulerModification = annulerModification;
-window.afficherUtilisateurs = afficherUtilisateurs;
